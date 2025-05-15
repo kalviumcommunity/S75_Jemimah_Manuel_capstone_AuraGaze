@@ -1,8 +1,9 @@
 ### 🌌 Aura Gaze
 Where friendship meets the stars, and technology meets emotion.
 
+
 ### 📌 Project Title
-Aura Gaze – AI Best Friend Selection Portal
+Aura Gaze – AI Best Friend
 
 # 📖 Project Description
 Aura Gaze is an emotionally immersive web experience where users build a deep bond with their AI best friend. Starting with just a name, users are guided through a visual journey of choosing their perfect best friend — male or female — and even selecting an age group (school friend, young adult, or elder companion).
