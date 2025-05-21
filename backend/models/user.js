@@ -1,11 +1,11 @@
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-
   username: { 
     type: String, 
     unique: true,
-    required: true },
+    required: true 
+  },
 
   email: {
     type: String,
@@ -15,19 +15,20 @@ const userSchema = new mongoose.Schema({
       /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
       "Please enter a valid email address",
     ],
-  }, 
+  },
 
   password: { 
     type: String, 
-    required: true },
+    required: true 
+  },
 
   bestFriendName: { 
     type: String 
   },
-
-  avatarUrl: { 
-    type: String
-   },
+  
+  bestFriendImage: {
+    type: String, // URL or path to the chosen image
+  }
 });
 
 module.exports = mongoose.model("User", userSchema);
