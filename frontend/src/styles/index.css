@@ -1,0 +1,88 @@
+/* Ensure full-screen layout */
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Background Video Styling */
+.video-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  z-index: -1;
+}
+
+/* Centering the Logo and Text */
+.logo-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: scaleUp 1.5s ease-in-out;
+  padding: 1rem;
+  text-align: center;
+  z-index: 2;
+}
+
+/* Logo Styling */
+.logo {
+  width: 220px;
+  max-width: 80vw;
+  height: auto;
+  margin-bottom: 20px;
+  animation: fadeIn 2s ease-in-out;
+}
+
+/* Aura Text Styling */
+.aura-text {
+  font-size: 60px;
+  font-weight: bold;
+  color: #26e0f5;
+  text-shadow: 4px 4px 12px rgba(0, 0, 0, 0.8);
+  opacity: 0;
+  animation: fadeInText 2s ease-in-out 1s forwards;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Tagline Styling */
+.tagline {
+  font-size: 20px;
+  font-weight: 500;
+  color: #ffffff;
+  margin-top: 12px;
+  opacity: 0;
+  animation: fadeInText 2s ease-in-out 2s forwards;
+  font-family: 'Open Sans', sans-serif;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* Scale-Up Animation */
+@keyframes scaleUp {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Fade-In Animation */
+@keyframes fadeInText {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
