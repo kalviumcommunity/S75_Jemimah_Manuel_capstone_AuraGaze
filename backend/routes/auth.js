@@ -15,7 +15,7 @@ authRouter.post("/login", login);
 // ✅ Protected Routes (Only for logged-in users)
 authRouter.post("/bestFriendName", authMiddleware, BestFriendName); 
 authRouter.post("/bestFriendImage", authMiddleware, BestFriendImage);
-authRouter.put("/updateUser", authMiddleware, updateUserInfo);
+authRouter.put("/updateUser", authMiddleware, updateUserInfo); 
 authRouter.get("/userInfo/:username", authMiddleware, getUserInfo);
 
 module.exports = authRouter;
