@@ -4,7 +4,7 @@ const authMiddleware = require("../middleware/authmiddleware");
 const { signup } = require("../controller/signup");
 const { login } = require("../controller/login"); 
 const { BestFriendName, BestFriendImage } = require("../controller/name");
-const { updateUserInfo, getUserInfo } = require("../controller/profile");
+const { updateUserInfo, getUserInfo, deleteUser } = require("../controller/profile");
 
 const authRouter = express.Router();
 
@@ -17,5 +17,6 @@ authRouter.post("/bestFriendName", authMiddleware, BestFriendName);
 authRouter.post("/bestFriendImage", authMiddleware, BestFriendImage);
 authRouter.put("/updateUser", authMiddleware, updateUserInfo); 
 authRouter.get("/userInfo/:username", authMiddleware, getUserInfo);
+authRouter.delete("/deleteUser/:username", authMiddleware, deleteUser);
 
 module.exports = authRouter;
