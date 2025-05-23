@@ -1,23 +1,20 @@
 const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 
-exports.signup = async (req, res) => {
+const signup = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
     if (!username || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
-
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
-
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-
     // Create new user
     const newUser = new User({
       username,
@@ -33,3 +30,5 @@ exports.signup = async (req, res) => {
     res.status(500).json({ message: "Signup failed", error: error.message });
   }
 };
+
+module.exports = { signup };
