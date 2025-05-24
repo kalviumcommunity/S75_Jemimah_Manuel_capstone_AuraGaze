@@ -8,7 +8,7 @@ const Home = () => {
     navigate("/loginsignup");
   };
 
-  return (
+  return ( 
     <div className="background-container" onClick={handleClick}>
       <video autoPlay loop muted playsInline className="video-background">
         <source src="/183279-870457579_medium.mp4" type="video/mp4" />
