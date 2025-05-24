@@ -2,8 +2,7 @@ const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 
 // PUT: Update username, email, password, or AI best friend name
-
-exports.updateUserInfo = async (req, res) => {
+const updateUserInfo = async (req, res) => {
   try {
     const { email, newUsername, newEmail, newPassword, newAIBestFriendName } = req.body;
 
@@ -46,3 +45,27 @@ exports.updateUserInfo = async (req, res) => {
     res.status(500).json({ message: "Failed to update profile", error });
   }
 };
+
+const getUserInfo = async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    const user = await User.findOne({ username }).select("-password"); // 🔐 hiding password
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found!" });
+    }
+
+    res.status(200).json({
+      username: user.username,
+      email: user.email,
+      bestFriendName: user.bestFriendName, // 🟢 returns name
+      bestFriendImage: user.bestFriendImage, // 🟢 returns image
+    });
+  } catch (error) {
+    console.error("Get Profile Error:", error);
+    res.status(500).json({ message: "Failed to fetch user info", error });
+  }
+};
+
+module.exports = {getUserInfo , updateUserInfo}

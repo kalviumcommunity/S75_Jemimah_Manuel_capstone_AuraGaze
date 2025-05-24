@@ -1,7 +1,7 @@
 const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 
-exports.signup = async (req, res) => {
+const signup = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
@@ -33,3 +33,4 @@ exports.signup = async (req, res) => {
     res.status(500).json({ message: "Signup failed", error: error.message });
   }
 };
+module.exports = {signup};
