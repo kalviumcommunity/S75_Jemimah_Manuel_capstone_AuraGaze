@@ -1,6 +1,9 @@
 const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 
+
+// PUT: Update username, email, password, or AI best friend name
+
 // ✅ GET: Fetch user info (for profile page)
 const getUserInfo = async (req, res) => {
   try {
@@ -25,6 +28,7 @@ const getUserInfo = async (req, res) => {
 };
 
 // ✅ PUT: Update username, email, password, best friend name
+
 const updateUserInfo = async (req, res) => {
   try {
     const { email, newUsername, newEmail, newPassword, newBestFriendName } = req.body;
@@ -69,6 +73,31 @@ const updateUserInfo = async (req, res) => {
   }
 };
 
+
+const getUserInfo = async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    const user = await User.findOne({ username }).select("-password"); // 🔐 hiding password
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found!" });
+    }
+
+    res.status(200).json({
+      username: user.username,
+      email: user.email,
+      bestFriendName: user.bestFriendName, // 🟢 returns name
+      bestFriendImage: user.bestFriendImage, // 🟢 returns image
+    });
+  } catch (error) {
+    console.error("Get Profile Error:", error);
+    res.status(500).json({ message: "Failed to fetch user info", error });
+  }
+};
+
+module.exports = {getUserInfo , updateUserInfo}
+
 // ❌ DELETE: Delete user account
 const deleteUser = async (req, res) => {
   try {
@@ -92,3 +121,4 @@ const deleteUser = async (req, res) => {
 };
 
 module.exports = { updateUserInfo, getUserInfo, deleteUser};
+

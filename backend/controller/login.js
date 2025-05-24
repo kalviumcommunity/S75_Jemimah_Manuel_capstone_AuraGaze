@@ -33,4 +33,8 @@ const login = async (req, res) => {
     res.status(500).json({ message: "Login failed", error });
   }
 };
+db-read-write
+module.exports = {login};
+
 module.exports = { login };
+main
