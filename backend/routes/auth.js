@@ -4,7 +4,7 @@ const authMiddleware = require("../middleware/authmiddleware");
 const { signup } = require("../controller/signup");
 const { login } = require("../controller/login"); 
 const { BestFriendName, BestFriendImage } = require("../controller/name");
-const { updateUserInfo, getUserInfo } = require("../controller/profile");
+const { updateUserInfo, getUserInfo, deleteUser } = require("../controller/profile");
 
 const authRouter = express.Router();
 
@@ -13,9 +13,10 @@ authRouter.post("/signup", signup);
 authRouter.post("/login", login);
 
 // ✅ Protected Routes (Only for logged-in users)
-authRouter.post("/bestFriendName", authMiddleware, BestFriendName); // ✅ Missing in your latest code
+authRouter.post("/bestFriendName", authMiddleware, BestFriendName); 
 authRouter.post("/bestFriendImage", authMiddleware, BestFriendImage);
-authRouter.put("/updateUser", authMiddleware, updateUserInfo);
+authRouter.put("/updateUser", authMiddleware, updateUserInfo); 
 authRouter.get("/userInfo/:username", authMiddleware, getUserInfo);
+authRouter.delete("/deleteUser/:username", authMiddleware, deleteUser);
 
 module.exports = authRouter;

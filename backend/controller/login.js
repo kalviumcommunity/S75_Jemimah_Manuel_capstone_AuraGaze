@@ -33,4 +33,11 @@ const login = async (req, res) => {
     res.status(500).json({ message: "Login failed", error });
   }
 };
+entity-relationship
 module.exports = {login}; 
+db-read-write
+module.exports = {login};
+
+module.exports = { login };
+main
+main
