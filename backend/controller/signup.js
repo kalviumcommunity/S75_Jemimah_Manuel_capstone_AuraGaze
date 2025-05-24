@@ -30,9 +30,12 @@ const signup = async (req, res) => {
     res.status(500).json({ message: "Signup failed", error: error.message });
   }
 };
+ entity-relationship
+module.exports = {signup}; 
+
 
 module.exports = {signup};
 
 
 module.exports = { signup };
-
+main

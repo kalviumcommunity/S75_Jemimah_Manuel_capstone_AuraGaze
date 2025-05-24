@@ -95,6 +95,9 @@ const getUserInfo = async (req, res) => {
   }
 };
 
+entity-relationship
+module.exports = {getUserInfo , updateUserInfo} 
+
 module.exports = {getUserInfo , updateUserInfo}
 
 // ❌ DELETE: Delete user account
@@ -121,3 +124,4 @@ const deleteUser = async (req, res) => {
 
 module.exports = { updateUserInfo, getUserInfo, deleteUser};
 
+ main

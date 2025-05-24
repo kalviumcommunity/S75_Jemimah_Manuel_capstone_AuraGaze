@@ -26,7 +26,6 @@ const userSchema = new mongoose.Schema({
   bestFriendName: { 
     type: String 
   },
-  
   bestFriendImage: {
     type: String, // URL or path to the chosen image
   }

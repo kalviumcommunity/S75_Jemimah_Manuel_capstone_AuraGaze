@@ -53,6 +53,9 @@ const BestFriendImage = async (req, res) => {
 };
 db-read-write
 
+entity-relationship
+module.exports = { BestFriendName, BestFriendImage }; 
+
 module.exports = { BestFriendName, BestFriendImage };
 
 const BestFriendName = async (req, res) => {
@@ -80,4 +83,5 @@ const BestFriendName = async (req, res) => {
 };
 
 module.exports = { BestFriendImage, BestFriendName };
+main
 main
