@@ -67,4 +67,4 @@ const getUserInfo = async (req, res) => {
   }
 };
 
-module.exports = {getUserInfo , updateUserInfo}
+module.exports = {getUserInfo , updateUserInfo} 

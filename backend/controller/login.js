@@ -33,4 +33,4 @@ const login = async (req, res) => {
     res.status(500).json({ message: "Login failed", error });
   }
 };
-module.exports = {login};
+module.exports = {login}; 

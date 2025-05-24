@@ -50,4 +50,4 @@ const BestFriendImage = async (req, res) => {
   }
 };
 
-module.exports = { BestFriendName, BestFriendImage };
+module.exports = { BestFriendName, BestFriendImage }; 

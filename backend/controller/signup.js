@@ -33,4 +33,4 @@ const signup = async (req, res) => {
     res.status(500).json({ message: "Signup failed", error: error.message });
   }
 };
-module.exports = {signup};
+module.exports = {signup}; 
