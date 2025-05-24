@@ -5,7 +5,6 @@ const dotenv = require("dotenv");
 const path = require("path");
 const connectDB = require("./db/db");
 const authRouter = require("./routes/auth");
-const avatarRouter = require("./routes/avatar"); 
 
 dotenv.config();
 
@@ -36,7 +35,6 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ✅ Routes
 app.use("/auth", authRouter);
-app.use("/avatar", avatarRouter);  // Avatar routes
 
 // ✅ Test route
 app.get("/", (req, res) => {

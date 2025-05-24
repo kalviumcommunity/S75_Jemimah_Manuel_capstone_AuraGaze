@@ -4,7 +4,7 @@ export default function AgeMale() {
   const navigate = useNavigate();
 
   const handleSelect = (ageGroup) => {
-    localStorage.setItem("maleAgeGroup", ageGroup);
+    localStorage.setItem("femaleAgeGroup", ageGroup);
     
     // Navigate to the corresponding dashboard
     if (ageGroup === "schoolGirl") {
