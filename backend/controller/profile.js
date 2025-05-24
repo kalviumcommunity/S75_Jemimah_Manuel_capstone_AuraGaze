@@ -20,7 +20,6 @@ const updateUserInfo = async (req, res) => {
 
     if (newUsername) updateFields.username = newUsername;
     if (newEmail) updateFields.email = newEmail;
-
     if (newPassword) {
       const hashed = await bcrypt.hash(newPassword, 10);
       updateFields.password = hashed;
@@ -59,8 +58,8 @@ const getUserInfo = async (req, res) => {
     res.status(200).json({
       username: user.username,
       email: user.email,
-      bestFriendName: user.bestFriendName, // 🟢 returns name
-      bestFriendImage: user.bestFriendImage, // 🟢 returns image
+      bestFriendName: user.bestFriendName,
+      bestFriendImage: user.bestFriendImage,
     });
   } catch (error) {
     console.error("Get Profile Error:", error);
