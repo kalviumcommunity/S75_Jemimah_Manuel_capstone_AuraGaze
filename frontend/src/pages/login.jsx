@@ -53,16 +53,17 @@ export default function Login() {
       </video>
 
       {/* Login Box */}
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
+      <div
+        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
                       w-80 h-auto flex flex-col items-center justify-center gap-y-4 px-6 py-4 text-white 
                       bg-[rgba(255,255,255,0.2)] border border-white backdrop-blur-md 
-                      rounded-xl shadow-lg z-10">
-
+                      rounded-xl shadow-lg z-10"
+      >
         <h1 className="text-2xl font-bold font-[Playfair_Display]">LOGIN</h1>
 
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        <input 
+        <input
           type="text"
           name="email"
           placeholder="Email"
@@ -71,7 +72,7 @@ export default function Login() {
           className="w-full px-3 py-2 bg-transparent border-b border-white text-white outline-none"
         />
 
-        <input 
+        <input
           type="password"
           name="password"
           placeholder="Password"
@@ -80,13 +81,14 @@ export default function Login() {
           className="w-full px-3 py-2 bg-transparent border-b border-white text-white outline-none"
         />
 
-        <button 
-          onClick={handleSubmit}
-          disabled={loading}
-          className="w-full mt-2 py-2 bg-white text-black font-semibold rounded-md hover:bg-gray-300 transition"
-        >
-          {loading ? "Logging in..." : "Login"}
-        </button>
+       <button
+  onClick={handleSubmit}
+  disabled={loading}          // disable button when loading is true
+  className="w-full mt-2 py-2 bg-white text-black font-semibold rounded-md hover:bg-gray-300 transition disabled:opacity-50"
+>
+  Login
+</button>
+
 
         <p className="text-sm text-white mt-2 cursor-pointer hover:underline">
           Forgot Password?
