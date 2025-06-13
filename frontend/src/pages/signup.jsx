@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
+const backendURL = import.meta.env.VITE_BACKEND_URL;
+
 export default function Signup() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -24,7 +26,7 @@ export default function Signup() {
     }
 
     try {
-      const response = await axios.post("https://ss-aura-gaze-1528.onrender.com/auth/signup", formData);
+      const response = await axios.post(`${backendURL}/auth/signup`, formData);
       localStorage.setItem("username", response.data.username);
       navigate("/name");
     } catch (error) {

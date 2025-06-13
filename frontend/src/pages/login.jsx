@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
+const backendURL = import.meta.env.VITE_BACKEND_URL; 
+
 export default function Login() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -10,7 +12,7 @@ export default function Login() {
 
   // Wake up backend on mount
   useEffect(() => {
-    axios.get("https://ss-aura-gaze-1528.onrender.com/")
+    axios.get(`${backendURL}/`)
       .then(() => console.log("Backend is awake"))
       .catch((err) => console.log("Backend wakeup failed", err));
   }, []);
@@ -26,10 +28,7 @@ export default function Login() {
     setError("");
 
     try {
-      const response = await axios.post(
-        "https://ss-aura-gaze-1528.onrender.com/auth/login",
-        formData
-      );
+      const response = await axios.post(`${backendURL}/auth/login`, formData); // ✅ Updated URL
 
       localStorage.setItem("username", response.data.username);
       navigate("/name");
@@ -81,14 +80,13 @@ export default function Login() {
           className="w-full px-3 py-2 bg-transparent border-b border-white text-white outline-none"
         />
 
-       <button
-  onClick={handleSubmit}
-  disabled={loading}          // disable button when loading is true
-  className="w-full mt-2 py-2 bg-white text-black font-semibold rounded-md hover:bg-gray-300 transition disabled:opacity-50"
->
-  Login
-</button>
-
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          className="w-full mt-2 py-2 bg-white text-black font-semibold rounded-md hover:bg-gray-300 transition disabled:opacity-50"
+        >
+          Login
+        </button>
 
         <p className="text-sm text-white mt-2 cursor-pointer hover:underline">
           Forgot Password?

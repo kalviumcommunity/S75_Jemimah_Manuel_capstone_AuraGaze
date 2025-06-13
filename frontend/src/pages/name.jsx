@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
+const backendURL = import.meta.env.VITE_BACKEND_URL; 
+
 export default function NamePage() {
   const navigate = useNavigate();
   const [name, setName] = useState("");
@@ -37,7 +39,7 @@ export default function NamePage() {
     try {
       console.log("Submitting name:", name, "for user:", username);
 
-      await axios.post("https://ss-aura-gaze-1528.onrender.com/auth/bestFriendName", {
+      await axios.post(`${backendURL}/auth/bestFriendName`, {
         name,
         username,
       });
@@ -50,7 +52,6 @@ export default function NamePage() {
 
   return (
     <div className="w-screen h-screen relative overflow-hidden">
-      {/* Background Video */}
       <video
         autoPlay
         loop
@@ -60,7 +61,6 @@ export default function NamePage() {
         <source src="/183279-870457579_medium.mp4" type="video/mp4" />
       </video>
 
-      {/* Form Content */}
       <form
         onSubmit={handleSubmit}
         className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
