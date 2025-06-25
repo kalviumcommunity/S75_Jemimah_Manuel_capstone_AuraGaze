@@ -12,13 +12,15 @@ const app = express();
 
 // ✅ CORS setup must be done early
 const corsOptions = {
-  origin: ["http://localhost:5173",
-      "https://auragaze1528.netlify.app/",
-],
+  origin: [
+    "http://localhost:5173",
+    "https://auragaze1528.netlify.app",
+  ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type"],
   credentials: true,
 };
+
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions)); // handles preflight CORS requests
 
