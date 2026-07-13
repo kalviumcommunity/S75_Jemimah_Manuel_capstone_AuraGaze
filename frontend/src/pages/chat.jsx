@@ -1,90 +1,183 @@
-import React, { useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
-const ChatBox = () => {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
+import ChatHeader from "../components/chat/ChatHeader";
+import ChatBubble from "../components/chat/ChatBubble";
+import TypingIndicator from "../components/chat/TypingIndicator";
+import MessageInput from "../components/chat/MessageInput";
 
-  const handleSendMessage = () => {
-    if (input.trim()) {
-      setMessages([...messages, { text: input, sender: 'user' }]);
-      setInput('');
+import { useOnboarding } from "../context/OnboardingContext";
 
-      // Simulate multiple AI replies after user input
-      setTimeout(() => {
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { text: "Hey, I'm here for you! 😊 What's up?", sender: 'ai' },
-        ]);
-      }, 1000);
+export default function Chat() {
 
-      setTimeout(() => {
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { text: "Anything exciting happened today? 🤔", sender: 'ai' },
-        ]);
-      }, 2000);
+  const { onboardingData } = useOnboarding();
 
-      setTimeout(() => {
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { text: "Tell me more, I'm all ears! 👂", sender: 'ai' },
-        ]);
-      }, 3000);
-    }
+  const {
+    nickname,
+    friendName,
+    friendImage,
+  } = onboardingData;
+
+  const messagesEndRef = useRef(null);
+
+  const [typing, setTyping] = useState(false);
+
+  const [messages, setMessages] = useState([
+    {
+      sender: "ai",
+      text: `Hi ${nickname} 😊
+
+I'm really happy you chose me.
+
+I've been waiting to meet you.
+
+How was your day? ❤️`,
+    },
+  ]);
+
+
+
+  // ==========================
+  // Auto Scroll
+  // ==========================
+
+  useEffect(() => {
+
+    messagesEndRef.current?.scrollIntoView({
+
+      behavior: "smooth",
+
+    });
+
+  }, [messages, typing]);
+
+
+
+  // ==========================
+  // Send Message
+  // ==========================
+
+  const handleSend = (text) => {
+
+    const newMessage = {
+
+      sender: "user",
+
+      text,
+
+    };
+
+    setMessages((prev) => [...prev, newMessage]);
+
+
+
+    // AI Typing
+
+    setTyping(true);
+
+
+
+    setTimeout(() => {
+
+      setTyping(false);
+
+
+
+      const replies = [
+
+        `Tell me more, ${nickname}. ❤️`,
+
+        `I'm listening...`,
+
+        `That must have been difficult.`,
+
+        `You don't have to hide anything from me.`,
+
+        `Thank you for telling me that.`,
+
+        `How did that make you feel?`,
+
+        `I love hearing about your day. 😊`,
+
+        `I'm always here for you.`,
+
+        `You're safe with me.`,
+
+        `We'll figure everything out together. 💜`
+
+      ];
+
+
+
+      const randomReply =
+
+        replies[
+
+          Math.floor(
+
+            Math.random() * replies.length
+
+          )
+
+        ];
+
+
+
+      setMessages((prev) => [
+
+        ...prev,
+
+        {
+
+          sender: "ai",
+
+          text: randomReply,
+
+        },
+
+      ]);
+
+
+
+    }, 1800);
+
+  };
+
+    // Friend Object
+  const friend = {
+    name: friendName,
+    image: friendImage,
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden">
-      {/* Full-Screen Video Background */}
-      <video
-        src="/183279-870457579_medium.mp4"
-        autoPlay
-        loop
-        muted
-        className="absolute inset-0 w-full h-full object-cover z-0"
-      />
+    <div className="h-screen w-screen bg-[#090414] overflow-hidden flex flex-col">
 
-      {/* Chat Container */}
-      <div className="relative z-10 flex items-center justify-center w-full h-full">
-        <div className="flex flex-col w-[90%] max-w-md h-[80%] bg-white/20 backdrop-blur-md border border-white rounded-xl p-4 shadow-lg">
-          <div className="text-center text-xl font-bold mb-2 text-white">
-            Your AI Best Friend
-          </div>
+      {/* Header */}
+      <ChatHeader friend={friend} />
 
-          <div className="flex-grow overflow-y-auto space-y-2 pr-2">
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`p-2 rounded-lg max-w-[75%] ${
-                  msg.sender === 'user'
-                    ? 'bg-blue-300 self-end text-black'
-                    : 'bg-green-300 self-start text-black'
-                }`}
-              >
-                {msg.text}
-              </div>
-            ))}
-          </div>
+      {/* Messages */}
+      <div
+        className="flex-1 overflow-y-auto px-8 py-8 bg-cover bg-center"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at top, rgba(124,92,252,.18), transparent 45%)",
+        }}
+      >
+        {messages.map((message, index) => (
+          <ChatBubble
+            key={index}
+            sender={message.sender}
+            text={message.text}
+            image={friend.image}
+          />
+        ))}
 
-          <div className="mt-2 flex gap-2">
-            <input
-  type="text"
-  value={input}
-  onChange={(e) => setInput(e.target.value)}
-  className="flex-grow p-2 rounded-md outline-none placeholder-cyan-400"
-  placeholder="Type your message..."
-/>
-            <button
-              onClick={handleSendMessage}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-            >
-              Send
-            </button>
-          </div>
-        </div>
+        {typing && <TypingIndicator />}
+
+        <div ref={messagesEndRef} />
       </div>
+
+      {/* Input */}
+      <MessageInput onSend={handleSend} />
     </div>
   );
-};
-
-export default ChatBox;
+}

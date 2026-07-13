@@ -1,88 +1,272 @@
-/* Ensure full-screen layout */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap');
+
+/* ==========================
+   GLOBAL
+========================== */
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
 html,
 body,
-#root {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  font-family: 'Poppins', sans-serif;
+#root{
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  font-family:'Outfit',sans-serif;
 }
 
-/* Background Video Styling */
-.video-background {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  object-fit: cover;
-  z-index: -1;
+/* ==========================
+   BACKGROUND
+========================== */
+
+.background-container{
+  position:relative;
+  width:100vw;
+  height:100vh;
+  overflow:hidden;
+  cursor:pointer;
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
 }
 
-/* Centering the Logo and Text */
-.logo-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  animation: scaleUp 1.5s ease-in-out;
-  padding: 1rem;
-  text-align: center;
-  z-index: 2;
+/* ==========================
+   VIDEO
+========================== */
+
+.video-background{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  z-index:-2;
 }
 
-/* Logo Styling */
-.logo {
-  width: 220px;
-  max-width: 80vw;
-  height: auto;
-  margin-bottom: 20px;
-  animation: fadeIn 2s ease-in-out;
+/* ==========================
+   OVERLAY
+========================== */
+
+.background-container::before{
+  content:"";
+  position:absolute;
+  inset:0;
+
+  background:linear-gradient(
+    to bottom,
+    rgba(8,10,35,.15),
+    rgba(8,10,35,.28),
+    rgba(8,10,35,.42)
+  );
+
+  z-index:-1;
 }
 
-/* Aura Text Styling */
-.aura-text {
-  font-size: 60px;
-  font-weight: bold;
-  color: #26e0f5;
-  text-shadow: 4px 4px 12px rgba(0, 0, 0, 0.8);
-  opacity: 0;
-  animation: fadeInText 2s ease-in-out 1s forwards;
-  font-family: 'Poppins', sans-serif;
+/* ==========================
+   CONTENT
+========================== */
+
+.logo-container{
+
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+
+  text-align:center;
+
+  width:100%;
+
+  transform:translateY(-15px);
+
+  animation:fadeScale 1.4s ease;
+
+  z-index:10;
+
 }
 
-/* Tagline Styling */
-.tagline {
-  font-size: 20px;
-  font-weight: 500;
-  color: #ffffff;
-  margin-top: 12px;
-  opacity: 0;
-  animation: fadeInText 2s ease-in-out 2s forwards;
-  font-family: 'Open Sans', sans-serif;
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.6);
+/* ==========================
+   LOGO
+========================== */
+
+.logo{
+
+  width:320px;
+  max-width:80vw;
+  height:auto;
+
+  margin-bottom:18px;
+
+  animation:floating 4s ease-in-out infinite;
+
+  filter:
+    drop-shadow(0 0 18px rgba(173,120,255,.55))
+    drop-shadow(0 0 35px rgba(140,90,255,.35));
+
 }
 
-/* Scale-Up Animation */
-@keyframes scaleUp {
-  0% {
-    transform: translate(-50%, -50%) scale(0.6);
-    opacity: 0;
+/* ==========================
+   TITLE
+========================== */
+
+.title-image{
+
+  width:560px;
+  max-width:88vw;
+  height:auto;
+
+  margin-bottom:14px;
+
+  animation:fadeIn 1.8s ease;
+
+  filter:
+    drop-shadow(0 0 10px rgba(255,220,150,.35))
+    drop-shadow(0 0 25px rgba(255,190,80,.18));
+
+}
+
+/* ==========================
+   TAGLINE
+========================== */
+
+.tagline{
+
+  font-family:"Times New Roman",serif;
+
+  font-size:24px;
+  font-weight:500;
+
+  color:#F4E7FF;
+
+  letter-spacing:4px;
+  text-transform:uppercase;
+
+  opacity:0;
+
+  animation:fadeIn 2s ease forwards;
+  animation-delay:.6s;
+
+  text-shadow:
+      0 0 8px rgba(255,255,255,.25),
+      0 0 18px rgba(195,150,255,.35),
+      0 3px 10px rgba(0,0,0,.6);
+
+}
+
+/* ==========================
+   ANIMATIONS
+========================== */
+
+@keyframes fadeScale{
+
+  from{
+    opacity:0;
+    transform:translateY(20px) scale(.92);
   }
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
+
+  to{
+    opacity:1;
+    transform:translateY(-15px) scale(1);
   }
+
 }
 
-/* Fade-In Animation */
-@keyframes fadeInText {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
+@keyframes fadeIn{
+
+  from{
+    opacity:0;
+    transform:translateY(18px);
+  }
+
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+
+}
+
+@keyframes floating{
+
+  0%,100%{
+    transform:translateY(0);
+  }
+
+  50%{
+    transform:translateY(-10px);
+  }
+
+}
+
+/* ==========================
+   LAPTOP
+========================== */
+
+@media(max-width:1200px){
+
+.logo{
+  width:280px;
+}
+
+.title-image{
+  width:500px;
+}
+
+.tagline{
+  font-size:21px;
+  letter-spacing:3px;
+}
+
+}
+
+/* ==========================
+   TABLET
+========================== */
+
+@media(max-width:768px){
+
+.logo-container{
+  transform:translateY(-10px);
+}
+
+.logo{
+  width:210px;
+  margin-bottom:14px;
+}
+
+.title-image{
+  width:88vw;
+  margin-bottom:10px;
+}
+
+.tagline{
+  font-size:16px;
+  letter-spacing:2px;
+}
+
+}
+
+/* ==========================
+   MOBILE
+========================== */
+
+@media(max-width:480px){
+
+.logo{
+  width:160px;
+}
+
+.title-image{
+  width:92vw;
+}
+
+.tagline{
+  font-size:13px;
+  letter-spacing:1.5px;
+}
+
 }
