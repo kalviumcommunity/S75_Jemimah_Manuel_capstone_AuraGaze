@@ -9,7 +9,7 @@ const {
   getOnboarding,
 } = require("../controller/onboardingController");
 
-router.post("/", authMiddleware, saveOnboarding);
+router.put("/save", authMiddleware, saveOnboarding);
 
 router.get("/", authMiddleware, getOnboarding);
 
