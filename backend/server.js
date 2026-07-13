@@ -1,10 +1,11 @@
 const express = require("express");
 const cors = require("cors");
-const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const path = require("path");
-const connectDB = require("./db/db");
+const connectDB = require("./config/db");
 const authRouter = require("./routes/auth");
+const onboardingRoutes = require("./routes/onboarding");
+const chatRoutes = require("./routes/chat");
 
 dotenv.config();
 
@@ -15,9 +16,15 @@ const corsOptions = {
     "http://localhost:5173",
     "https://auragaze1528.netlify.app",
   ],
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type"],
+
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+
   credentials: true,
+
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+  ],
 };
 
 app.use(cors(corsOptions));
@@ -35,6 +42,8 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ✅ Routes
 app.use("/auth", authRouter);
+app.use("/api/onboarding", onboardingRoutes);
+app.use("/api/chat", chatRoutes);
 
 // ✅ Test route
 app.get("/", (req, res) => {

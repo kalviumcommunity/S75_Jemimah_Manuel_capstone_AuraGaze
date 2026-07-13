@@ -1,22 +1,14 @@
 const express = require("express");
-const authMiddleware = require("../middleware/authmiddleware");
 
-const { signup } = require("../controller/signup");
-const { login } = require("../controller/login"); 
-const { BestFriendName, BestFriendImage } = require("../controller/name");
-const { updateUserInfo, getUserInfo, deleteUser } = require("../controller/profile");
+const {
+    signup,
+    login
+} = require("../controller/authController");
 
-const authRouter = express.Router();
+const router = express.Router();
 
-// ✅ Public Routes
-authRouter.post("/signup", signup); 
-authRouter.post("/login", login);
+router.post("/signup", signup);
 
-// ✅ Protected Routes (Only for logged-in users)
-authRouter.post("/bestFriendName", authMiddleware, BestFriendName); 
-authRouter.post("/bestFriendImage", authMiddleware, BestFriendImage);
-authRouter.put("/updateUser", authMiddleware, updateUserInfo); 
-authRouter.get("/userInfo/:username", authMiddleware, getUserInfo);
-authRouter.delete("/deleteUser/:username", authMiddleware, deleteUser);
+router.post("/login", login);
 
-module.exports = authRouter;
+module.exports = router;
