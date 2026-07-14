@@ -1,10 +1,11 @@
-const User = require("../models/user");
+const User = require("../models/User");
 
 // =========================================
 // SAVE COMPLETE ONBOARDING
 // =========================================
 
 const saveOnboarding = async (req, res) => {
+
   try {
 
     const userId = req.user.userId;
@@ -14,7 +15,7 @@ const saveOnboarding = async (req, res) => {
       dob,
       friendName,
       gender,
-      ageGroup,
+      age,
       image,
     } = req.body;
 
@@ -25,7 +26,7 @@ const saveOnboarding = async (req, res) => {
       !dob ||
       !friendName ||
       !gender ||
-      !ageGroup ||
+      !age ||
       !image
     ) {
       return res.status(400).json({
@@ -33,41 +34,90 @@ const saveOnboarding = async (req, res) => {
       });
     }
 
+    // ==========================
+    // Calculate Age Group
+    // ==========================
+
+    let ageGroup = "";
+
+    if (age <= 18) {
+
+      ageGroup = "school";
+
+    }
+
+    else if (age <= 40) {
+
+      ageGroup = "young";
+
+    }
+
+    else {
+
+      ageGroup = "elder";
+
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
+
       userId,
+
       {
+
         profileCompleted: true,
 
         profile: {
+
           nickname,
+
           dob,
+
         },
 
         friend: {
+
           name: friendName,
+
           gender,
+
           ageGroup,
+
           image,
+
         },
+
       },
+
       {
+
         new: true,
+
       }
+
     );
 
     res.status(200).json({
+
       message: "Onboarding Completed Successfully",
+
       user: updatedUser,
-    });
 
-  } catch (error) {
-
-    res.status(500).json({
-      message: "Failed to save onboarding",
-      error: error.message,
     });
 
   }
+
+  catch (error) {
+
+    console.log(error);
+
+    res.status(500).json({
+
+      message: error.message,
+
+    });
+
+  }
+
 };
 
 // =========================================

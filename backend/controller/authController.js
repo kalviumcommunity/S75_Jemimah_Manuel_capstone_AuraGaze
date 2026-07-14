@@ -29,23 +29,16 @@ const signup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({
-      username,
-      email,
-      password: hashedPassword,
+  username,
+  email,
+  password: hashedPassword,
 
-      profileCompleted: false,
+  profileCompleted: false,
 
-      profile: {
-        nickname: "",
-      },
-
-      friend: {
-        name: "",
-        gender: "",
-        ageGroup: "",
-        image: "",
-      },
-    });
+  profile: {
+    nickname: "",
+  },
+});
 
     await newUser.save();
 
@@ -54,13 +47,15 @@ const signup = async (req, res) => {
       username: newUser.username,
     });
   } catch (error) {
-    console.log(error);
+  console.error("Signup Error:");
+  console.error(error);
 
-    res.status(500).json({
-      message: "Signup Failed",
-      error: error.message,
-    });
-  }
+  res.status(500).json({
+    message: "Signup Failed",
+    error: error.message,
+    stack: error.stack,
+  });
+}
 };
 
 // ===================================

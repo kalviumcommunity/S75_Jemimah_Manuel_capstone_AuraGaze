@@ -9,8 +9,10 @@ const {
   getOnboarding,
 } = require("../controller/onboardingController");
 
+// Save onboarding
 router.put("/save", authMiddleware, saveOnboarding);
 
+// Get onboarding
 router.get("/", authMiddleware, getOnboarding);
 
 module.exports = router;

@@ -62,14 +62,14 @@ const userSchema = new mongoose.Schema(
 
       gender: {
         type: String,
-        enum: ["male", "female"],
-        default: "",
+        enum: ["male", "female", null],
+        default: null,
       },
 
       ageGroup: {
         type: String,
-        enum: ["school", "young", "elder"],
-        default: "",
+        enum: ["school", "young", "elder", null],
+        default: null,
       },
 
       image: {
@@ -83,4 +83,5 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("User", userSchema);
+module.exports =
+  mongoose.models.User || mongoose.model("User", userSchema);
