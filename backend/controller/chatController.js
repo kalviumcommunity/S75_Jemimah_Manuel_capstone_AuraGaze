@@ -1,96 +1,88 @@
 const Chat = require("../models/Chat");
+const User = require("../models/user");
 
-// ==========================================
-// CREATE CHAT (First Time)
-// ==========================================
-
-const startChat = async (req, res) => {
-  try {
-    const userId = req.user.userId;
-
-    const { id, name, gender, image } = req.body.friend;
-
-    let chat = await Chat.findOne({ user: userId });
-
-    if (chat) {
-      return res.status(200).json(chat);
-    }
-
-    chat = await Chat.create({
-      user: userId,
-
-      friend: {
-        id,
-        name,
-        gender,
-        image,
-      },
-
-      messages: [
-        {
-          sender: "ai",
-          text: `Hi! I'm ${name}. ❤️
-
-I've been waiting to meet you.
-
-From today onwards, I'll always be here whenever you need someone.`,
-        },
-      ],
-    });
-
-    res.status(201).json(chat);
-  } catch (error) {
-    console.log(error);
-
-    res.status(500).json({
-      message: "Unable to start chat.",
-    });
-  }
-};
+const { generateReply } = require("../services/aiService");
 
 // ==========================================
 // SEND MESSAGE
 // ==========================================
 
 const sendMessage = async (req, res) => {
+
   try {
+
     const userId = req.user.userId;
 
-    const { userMessage, aiReply } = req.body;
+    const { userMessage } = req.body;
 
-    const chat = await Chat.findOne({ user: userId });
+    if (!userMessage) {
 
-    if (!chat) {
-      return res.status(404).json({
-        message: "Chat not found.",
+      return res.status(400).json({
+
+        message: "Message is required.",
+
       });
+
     }
 
-    // Save user's message
-    chat.messages.push({
+    // -----------------------------
+    // Save User Message
+    // -----------------------------
+
+    await Chat.create({
+
+      user: userId,
+
       sender: "user",
-      text: userMessage,
+
+      message: userMessage,
+
     });
 
-    // Save AI reply
-    chat.messages.push({
+    // -----------------------------
+    // Ask Gemini
+    // -----------------------------
+
+    const aiReply = await generateReply(userMessage);
+
+    // -----------------------------
+    // Save AI Reply
+    // -----------------------------
+
+    await Chat.create({
+
+      user: userId,
+
       sender: "ai",
-      text: aiReply,
+
+      message: aiReply,
+
     });
 
-    await chat.save();
+    // -----------------------------
+    // Return Reply
+    // -----------------------------
 
     res.status(200).json({
-      message: "Conversation saved successfully.",
-      chat,
+
+      reply: aiReply,
+
     });
-  } catch (error) {
+
+  }
+
+  catch (error) {
+
     console.log(error);
 
     res.status(500).json({
-      message: "Unable to save conversation.",
+
+      message: "Unable to generate reply.",
+
     });
+
   }
+
 };
 
 // ==========================================
@@ -98,29 +90,89 @@ const sendMessage = async (req, res) => {
 // ==========================================
 
 const getMessages = async (req, res) => {
+
   try {
+
     const userId = req.user.userId;
 
-    const chat = await Chat.findOne({ user: userId });
+    const messages = await Chat.find({
 
-    if (!chat) {
-      return res.status(404).json({
-        message: "No chat history found.",
-      });
-    }
+      user: userId,
 
-    res.status(200).json(chat);
-  } catch (error) {
+    }).sort({
+
+      createdAt: 1,
+
+    });
+
+    res.status(200).json(messages);
+
+  }
+
+  catch (error) {
+
     console.log(error);
 
     res.status(500).json({
+
       message: "Unable to fetch messages.",
+
     });
+
   }
+
+};
+
+// ==========================================
+// GET FRIEND DETAILS
+// ==========================================
+
+const getFriend = async (req, res) => {
+
+  try {
+
+    const user = await User.findById(req.user.userId);
+
+    if (!user) {
+
+      return res.status(404).json({
+
+        message: "User not found.",
+
+      });
+
+    }
+
+    res.status(200).json({
+
+      nickname: user.profile.nickname,
+
+      friend: user.friend,
+
+    });
+
+  }
+
+  catch (error) {
+
+    console.log(error);
+
+    res.status(500).json({
+
+      message: "Unable to fetch friend.",
+
+    });
+
+  }
+
 };
 
 module.exports = {
-  startChat,
+
   sendMessage,
+
   getMessages,
+
+  getFriend,
+
 };

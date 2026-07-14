@@ -5,40 +5,93 @@ import ChatBubble from "../components/chat/ChatBubble";
 import TypingIndicator from "../components/chat/TypingIndicator";
 import MessageInput from "../components/chat/MessageInput";
 
-import { useOnboarding } from "../context/OnboardingContext";
+import {
+  getFriend,
+  getHistory,
+  sendMessage as sendMessageToAI,
+} from "../services/chatService";
 
 export default function Chat() {
 
-  const { onboardingData } = useOnboarding();
-
-  const {
-    nickname,
-    friendName,
-    friendImage,
-  } = onboardingData;
-
   const messagesEndRef = useRef(null);
+
+  const [loading, setLoading] = useState(true);
 
   const [typing, setTyping] = useState(false);
 
-  const [messages, setMessages] = useState([
-    {
-      sender: "ai",
-      text: `Hi ${nickname} 😊
+  const [nickname, setNickname] = useState("");
 
-I'm really happy you chose me.
+  const [friendName, setFriendName] = useState("");
 
-I've been waiting to meet you.
+  const [friendImage, setFriendImage] = useState("");
 
-How was your day? ❤️`,
-    },
-  ]);
+  const [messages, setMessages] = useState([]);
 
+  // ==========================================
+  // Load Friend + Chat History
+  // ==========================================
 
+  useEffect(() => {
 
-  // ==========================
+    const loadChat = async () => {
+
+      try {
+
+        const friendData = await getFriend();
+
+        setNickname(friendData.nickname);
+
+        setFriendName(friendData.friend.name);
+
+        setFriendImage(friendData.friend.image);
+
+        const history = await getHistory();
+
+        if (history.length > 0) {
+
+          const formatted = history.map((msg) => ({
+            sender: msg.sender,
+            text: msg.message,
+          }));
+
+          setMessages(formatted);
+
+        } else {
+
+          setMessages([
+            {
+              sender: "ai",
+              text: `hii ${friendData.nickname} 😊
+
+i'm ${friendData.friend.name} ❤️
+
+finally we met hehe
+
+hw ws ur day?`,
+            },
+          ]);
+
+        }
+
+      } catch (error) {
+
+        console.log(error);
+
+      } finally {
+
+        setLoading(false);
+
+      }
+
+    };
+
+    loadChat();
+
+  }, []);
+
+  // ==========================================
   // Auto Scroll
-  // ==========================
+  // ==========================================
 
   useEffect(() => {
 
@@ -50,77 +103,41 @@ How was your day? ❤️`,
 
   }, [messages, typing]);
 
-
-
-  // ==========================
+  // ==========================================
   // Send Message
-  // ==========================
+  // ==========================================
 
-  const handleSend = (text) => {
+  const handleSend = async (text) => {
 
-    const newMessage = {
+    if (!text.trim()) return;
 
-      sender: "user",
+    // Show user's message immediately
 
-      text,
+    setMessages((prev) => [
 
-    };
+      ...prev,
 
-    setMessages((prev) => [...prev, newMessage]);
+      {
 
+        sender: "user",
 
+        text,
 
-    // AI Typing
+      },
+
+    ]);
 
     setTyping(true);
 
+    try {
 
+      // Backend generates AI reply
 
-    setTimeout(() => {
+      const response = await sendMessageToAI(text);
+
+      const aiReply = response.reply;
 
       setTyping(false);
-
-
-
-      const replies = [
-
-        `Tell me more, ${nickname}. ❤️`,
-
-        `I'm listening...`,
-
-        `That must have been difficult.`,
-
-        `You don't have to hide anything from me.`,
-
-        `Thank you for telling me that.`,
-
-        `How did that make you feel?`,
-
-        `I love hearing about your day. 😊`,
-
-        `I'm always here for you.`,
-
-        `You're safe with me.`,
-
-        `We'll figure everything out together. 💜`
-
-      ];
-
-
-
-      const randomReply =
-
-        replies[
-
-          Math.floor(
-
-            Math.random() * replies.length
-
-          )
-
-        ];
-
-
 
       setMessages((prev) => [
 
@@ -130,54 +147,95 @@ How was your day? ❤️`,
 
           sender: "ai",
 
-          text: randomReply,
+          text: aiReply,
 
         },
 
       ]);
 
+    } catch (error) {
 
+      console.log(error);
 
-    }, 1800);
+      setTyping(false);
+
+    }
 
   };
 
-    // Friend Object
+  // ==========================================
+  // Friend Object
+  // ==========================================
+
   const friend = {
+
     name: friendName,
+
     image: friendImage,
+
   };
+
+  // ==========================================
+  // Loading Screen
+  // ==========================================
+
+  if (loading) {
+
+    return (
+
+      <div className="h-screen flex items-center justify-center bg-[#090414]">
+
+        <h1 className="text-white text-2xl">
+
+          Loading {friendName || "friend"}...
+
+        </h1>
+
+      </div>
+
+    );
+
+  }
+
+  // ==========================================
+  // UI
+  // ==========================================
 
   return (
+
     <div className="h-screen w-screen bg-[#090414] overflow-hidden flex flex-col">
 
-      {/* Header */}
       <ChatHeader friend={friend} />
 
-      {/* Messages */}
       <div
-        className="flex-1 overflow-y-auto px-8 py-8 bg-cover bg-center"
+        className="flex-1 overflow-y-auto px-8 py-8"
         style={{
           backgroundImage:
             "radial-gradient(circle at top, rgba(124,92,252,.18), transparent 45%)",
         }}
       >
+
         {messages.map((message, index) => (
+
           <ChatBubble
             key={index}
             sender={message.sender}
             text={message.text}
             image={friend.image}
           />
+
         ))}
 
         {typing && <TypingIndicator />}
 
         <div ref={messagesEndRef} />
+
       </div>
 
-      {/* Input */}
       <MessageInput onSend={handleSend} />
+
     </div>
+
   );
+
 }

@@ -1,23 +1,23 @@
 const express = require("express");
 
+const router = express.Router();
+
 const authMiddleware = require("../middleware/authmiddleware");
 
 const {
-  startChat,
   sendMessage,
   getMessages,
+  getFriend,
 } = require("../controller/chatController");
 
-const router = express.Router();
-
 // ==========================================
-// Create Chat (First Time)
+// Get Friend Details
 // ==========================================
 
-router.post(
-  "/start",
+router.get(
+  "/friend",
   authMiddleware,
-  startChat
+  getFriend
 );
 
 // ==========================================
