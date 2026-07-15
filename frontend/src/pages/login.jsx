@@ -44,8 +44,12 @@ export default function Login() {
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("username", response.data.username);
 
-      // Always go straight to chat after login
-      navigate("/chat");
+    // Go to Chat only if onboarding is completed
+    if (response.data.profileCompleted) {
+    navigate("/chat");
+    } else {
+    navigate("/nickname");
+    }
     } catch (error) {
       setError(error.response?.data?.message || "Login failed");
     } finally {

@@ -9,13 +9,13 @@ import Login from "./pages/login";
 import Signup from "./pages/signup";
 
 // Onboarding
-import Nickname from "./pages/onboarding/Nickname";
-import FriendName from "./pages/onboarding/FriendName";
-import DOB from "./pages/onboarding/DOB";
-import Gender from "./pages/onboarding/Gender";
-import Age from "./pages/onboarding/Age";
-import FriendSelection from "./pages/onboarding/FriendSelection";
-import CreatingFriend from "./pages/onboarding/CreatingFriend";
+import Nickname from "./pages/Onboarding/Nickname";
+import FriendName from "./pages/Onboarding/FriendName";
+import DOB from "./pages/Onboarding/DOB";
+import Gender from "./pages/Onboarding/Gender";
+import Age from "./pages/Onboarding/Age";
+import FriendSelection from "./pages/Onboarding/FriendSelection";
+import CreatingFriend from "./pages/Onboarding/CreatingFriend";
 
 // Chat
 import Chat from "./pages/Chat";

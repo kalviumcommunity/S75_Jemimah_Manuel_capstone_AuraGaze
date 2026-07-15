@@ -197,7 +197,7 @@ const handleContinue = async () => {
 
     );
 
-    updateField("friendImage", selectedImage);
+    updateField("image", selectedImage);
 
     navigate("/creating-friend");
 
