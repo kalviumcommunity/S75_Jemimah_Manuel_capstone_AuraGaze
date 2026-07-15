@@ -18,7 +18,7 @@ import FriendSelection from "./pages/Onboarding/FriendSelection";
 import CreatingFriend from "./pages/Onboarding/CreatingFriend";
 
 // Chat
-import Chat from "./pages/Chat";
+import Chat from "./pages/chat";
 
 function App() {
   return (
