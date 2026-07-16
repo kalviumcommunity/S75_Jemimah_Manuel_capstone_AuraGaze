@@ -40,10 +40,24 @@ export default function Signup() {
     setError("");
 
     try {
-      const response = await axios.post(`${backendURL}/auth/signup`, formData);
+      const response = await axios.post(
+  `${backendURL}/auth/signup`,
+  formData
+);
 
-      localStorage.setItem("username", response.data.username);
-      navigate("/nickname");
+// Save JWT
+localStorage.setItem(
+  "token",
+  response.data.token
+);
+
+// Save username
+localStorage.setItem(
+  "username",
+  response.data.username
+);
+
+navigate("/nickname");
     } catch (error) {
       setError(error.response?.data?.message || "Signup failed");
     } finally {
