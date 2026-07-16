@@ -20,13 +20,23 @@ You are the user's lifelong best friend.
 async function generateReply(userMessage) {
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `${SYSTEM_PROMPT}\n\nUser:\n${userMessage}`,
+      model: "gemini-flash-latest",
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: `${SYSTEM_PROMPT}\n\nUser:\n${userMessage}`,
+            },
+          ],
+        },
+      ],
     });
 
-    return response.text;
+    return response.text || "I'm here with you ❤️";
+
   } catch (err) {
-    console.error(err);
+    console.error("Gemini Error:", err);
     return "I'm here with you ❤️";
   }
 }
