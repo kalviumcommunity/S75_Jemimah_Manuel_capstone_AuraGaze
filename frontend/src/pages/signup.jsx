@@ -6,6 +6,7 @@ import axios from "axios";
 import bgImg from "../assets/images/background/bg.png";
 
 const backendURL = import.meta.env.VITE_BACKEND_URL;
+console.log("Backend URL =", backendURL);
 
 export default function Signup() {
   const navigate = useNavigate();

@@ -42,10 +42,23 @@ const signup = async (req, res) => {
 
     await newUser.save();
 
-    res.status(201).json({
-      message: "Signup Successful",
-      username: newUser.username,
-    });
+// Create JWT
+const token = jwt.sign(
+  {
+    userId: newUser._id,
+  },
+  process.env.JWT_SECRET,
+  {
+    expiresIn: "7d",
+  }
+);
+
+res.status(201).json({
+  message: "Signup Successful",
+  token,
+  username: newUser.username,
+  profileCompleted: false,
+});
   } catch (error) {
   console.error("Signup Error:");
   console.error(error);
