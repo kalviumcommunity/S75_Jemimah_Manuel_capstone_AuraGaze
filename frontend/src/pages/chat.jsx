@@ -103,76 +103,93 @@ hw ws ur day?`,
 
   }, [messages, typing]);
 
-  // ==========================================
-  // Send Message
-  // ==========================================
+// ==========================================
+// Helpers
+// ==========================================
 
-  const handleSend = async (text) => {
+const delay = (ms) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
-    if (!text.trim()) return;
+const typingDelay = (text) => {
+  const base = 700;
+  const perCharacter = text.length * 20;
 
-    // Show user's message immediately
+  return Math.min(base + perCharacter, 2500);
+};
 
-    setMessages((prev) => [
+// ==========================================
+// Send Message
+// ==========================================
 
-      ...prev,
+const handleSend = async (text) => {
 
-      {
+  if (!text.trim()) return;
 
-        sender: "user",
+  // Show user message instantly
 
-        text,
+  setMessages((prev) => [
+    ...prev,
+    {
+      sender: "user",
+      text,
+    },
+  ]);
 
-      },
+  setTyping(true);
 
-    ]);
+  try {
 
-    setTyping(true);
+    const response = await sendMessageToAI(text);
 
-    try {
+    const aiReplies = Array.isArray(response.reply)
+      ? response.reply
+      : [response.reply];
 
-      // Backend generates AI reply
+    for (let i = 0; i < aiReplies.length; i++) {
 
-      const response = await sendMessageToAI(text);
+      const reply = aiReplies[i];
 
-      const aiReply = response.reply;
+      // Typing delay based on message size
+
+      await delay(typingDelay(reply));
 
       setTyping(false);
 
       setMessages((prev) => [
-
         ...prev,
-
         {
-
           sender: "ai",
-
-          text: aiReply,
-
+          text: reply,
         },
-
       ]);
 
-    } catch (error) {
+      // Show typing again if another bubble exists
 
-      console.log(error);
-
-      setTyping(false);
+      if (i < aiReplies.length - 1) {
+        setTyping(true);
+      }
 
     }
 
-  };
+    setTyping(false);
+
+  } catch (error) {
+
+    console.log(error);
+
+    setTyping(false);
+
+  }
+
+};
 
   // ==========================================
   // Friend Object
   // ==========================================
 
   const friend = {
-
     name: friendName,
-
     image: friendImage,
-
   };
 
   // ==========================================
@@ -180,21 +197,13 @@ hw ws ur day?`,
   // ==========================================
 
   if (loading) {
-
     return (
-
       <div className="h-screen flex items-center justify-center bg-[#090414]">
-
         <h1 className="text-white text-2xl">
-
           Loading {friendName || "friend"}...
-
         </h1>
-
       </div>
-
     );
-
   }
 
   // ==========================================
@@ -202,7 +211,6 @@ hw ws ur day?`,
   // ==========================================
 
   return (
-
     <div className="h-screen w-screen bg-[#090414] overflow-hidden flex flex-col">
 
       <ChatHeader friend={friend} />
@@ -214,28 +222,23 @@ hw ws ur day?`,
             "radial-gradient(circle at top, rgba(124,92,252,.18), transparent 45%)",
         }}
       >
-
         {messages.map((message, index) => (
-
           <ChatBubble
             key={index}
             sender={message.sender}
             text={message.text}
             image={friend.image}
           />
-
         ))}
 
         {typing && <TypingIndicator />}
 
         <div ref={messagesEndRef} />
-
       </div>
 
       <MessageInput onSend={handleSend} />
 
     </div>
-
   );
 
 }

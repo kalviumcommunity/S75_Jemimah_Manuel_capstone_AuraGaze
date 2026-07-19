@@ -22,6 +22,10 @@ const {
   detectConversationState,
 } = require("../services/connectionService");
 
+const {
+  composeMessages,
+} = require("../services/messageComposer");
+
 // ==========================================
 // SEND MESSAGE
 // ==========================================
@@ -103,15 +107,25 @@ const sendMessage = async (req, res) => {
     });
 
     // ----------------------------------
-    // Save AI Reply
+    // Split Into WhatsApp Messages
     // ----------------------------------
 
-    await Chat.create({
-      user: userId,
-      sender: "ai",
-      message: aiReply,
-      messageType: "CHAT",
-    });
+    const aiReplies = composeMessages(aiReply);
+
+    // ----------------------------------
+    // Save Every Bubble
+    // ----------------------------------
+
+    for (const reply of aiReplies) {
+
+      await Chat.create({
+        user: userId,
+        sender: "ai",
+        message: reply,
+        messageType: "CHAT",
+      });
+
+    }
 
     // ----------------------------------
     // Reload Chat History
@@ -152,16 +166,18 @@ const sendMessage = async (req, res) => {
     // ----------------------------------
 
     res.status(200).json({
-      reply: aiReply,
+      reply: aiReplies,
       conversationState,
     });
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       message: "Unable to generate reply.",
     });
+
   }
 };
 
@@ -173,10 +189,6 @@ const getMessages = async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    // ----------------------------------
-    // Load User
-    // ----------------------------------
-
     const user = await User.findById(userId);
 
     if (!user) {
@@ -185,25 +197,13 @@ const getMessages = async (req, res) => {
       });
     }
 
-    // ----------------------------------
-    // Load Existing Chat
-    // ----------------------------------
-
     let chatHistory = await Chat.find({
       user: userId,
     }).sort({
       createdAt: 1,
     });
 
-    // ----------------------------------
-    // Load Memories
-    // ----------------------------------
-
     const memories = await getMemories(userId);
-
-    // ----------------------------------
-    // Run Scheduler
-    // ----------------------------------
 
     await runScheduler({
       user,
@@ -211,28 +211,22 @@ const getMessages = async (req, res) => {
       memories,
     });
 
-    // ----------------------------------
-    // Reload Chat
-    // ----------------------------------
-
     chatHistory = await Chat.find({
       user: userId,
     }).sort({
       createdAt: 1,
     });
 
-    // ----------------------------------
-    // Return Chat History
-    // ----------------------------------
-
     res.status(200).json(chatHistory);
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       message: "Unable to fetch messages.",
     });
+
   }
 };
 
@@ -242,9 +236,8 @@ const getMessages = async (req, res) => {
 
 const getFriend = async (req, res) => {
   try {
-    const user = await User.findById(
-      req.user.userId
-    );
+
+    const user = await User.findById(req.user.userId);
 
     if (!user) {
       return res.status(404).json({
@@ -258,11 +251,13 @@ const getFriend = async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(error);
 
     res.status(500).json({
       message: "Unable to fetch friend.",
     });
+
   }
 };
 
