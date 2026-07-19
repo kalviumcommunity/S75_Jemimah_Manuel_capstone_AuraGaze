@@ -48,7 +48,7 @@ export const getHistory = async () => {
 
   const response = await axios.get(
 
-    `${backendURL}/api/chat/history`,
+    `${backendURL}/api/chat/messages`,
 
     getHeaders()
 
@@ -57,7 +57,6 @@ export const getHistory = async () => {
   return response.data;
 
 };
-
 // ======================================
 // Send User Message to AI
 // ======================================
@@ -66,12 +65,10 @@ export const sendMessage = async (userMessage) => {
 
   const response = await axios.post(
 
-    `${backendURL}/api/chat/message`,
+    `${backendURL}/api/chat/send`,
 
     {
-
       userMessage,
-
     },
 
     getHeaders()
