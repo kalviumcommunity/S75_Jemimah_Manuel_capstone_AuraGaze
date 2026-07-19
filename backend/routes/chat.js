@@ -11,21 +11,11 @@ const {
 } = require("../controller/chatController");
 
 // ==========================================
-// Get Friend Details
-// ==========================================
-
-router.get(
-  "/friend",
-  authMiddleware,
-  getFriend
-);
-
-// ==========================================
-// Save Conversation
+// Send Message
 // ==========================================
 
 router.post(
-  "/message",
+  "/send",
   authMiddleware,
   sendMessage
 );
@@ -35,9 +25,19 @@ router.post(
 // ==========================================
 
 router.get(
-  "/history",
+  "/messages",
   authMiddleware,
   getMessages
+);
+
+// ==========================================
+// Get AI Friend Details
+// ==========================================
+
+router.get(
+  "/friend",
+  authMiddleware,
+  getFriend
 );
 
 module.exports = router;
