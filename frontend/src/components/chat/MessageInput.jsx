@@ -15,12 +15,20 @@ export default function MessageInput({ onSend }) {
 
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  };
+
   return (
     <div className="w-full flex gap-4 p-5 border-t border-white/10 backdrop-blur-xl bg-white/5">
 
       <input
         value={message}
         onChange={(e) => setMessage(e.target.value)}
+        onKeyDown={handleKeyDown}
         placeholder="Type something..."
         className="flex-1 rounded-full px-6 py-4 bg-white/10 text-white outline-none placeholder:text-white/40"
       />
