@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 
+import ChatLayout from "../components/layout/ChatLayout";
 import ChatHeader from "../components/chat/ChatHeader";
-import ChatBubble from "../components/chat/ChatBubble";
-import TypingIndicator from "../components/chat/TypingIndicator";
+import MessageList from "../components/chat/MessageList";
 import MessageInput from "../components/chat/MessageInput";
+import ErrorBoundary from "../components/ErrorBoundary";
 
 import {
   getFriend,
@@ -12,146 +13,132 @@ import {
 } from "../services/chatService";
 
 export default function Chat() {
-
   const messagesEndRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const [typing, setTyping] = useState(false);
 
+  const [friend, setFriend] = useState({
+    name: "",
+    image: "",
+  });
+
   const [nickname, setNickname] = useState("");
-
-  const [friendName, setFriendName] = useState("");
-
-  const [friendImage, setFriendImage] = useState("");
 
   const [messages, setMessages] = useState([]);
 
-  // ==========================================
-  // Load Friend + Chat History
-  // ==========================================
+  // ============================================================
+  // Load Friend + History
+  // ============================================================
 
   useEffect(() => {
-
-    const loadChat = async () => {
-
-      try {
-
-        const friendData = await getFriend();
-
-        setNickname(friendData.nickname);
-
-        setFriendName(friendData.friend.name);
-
-        setFriendImage(friendData.friend.image);
-
-        const history = await getHistory();
-
-        if (history.length > 0) {
-
-          const formatted = history.map((msg) => ({
-            sender: msg.sender,
-            text: msg.message,
-          }));
-
-          setMessages(formatted);
-
-        } else {
-
-          setMessages([
-            {
-              sender: "ai",
-              text: `hii ${friendData.nickname} 😊
-
-i'm ${friendData.friend.name} ❤️
-
-finally we met hehe
-
-hw ws ur day?`,
-            },
-          ]);
-
-        }
-
-      } catch (error) {
-
-        console.log(error);
-
-      } finally {
-
-        setLoading(false);
-
-      }
-
-    };
-
     loadChat();
-
   }, []);
 
-  // ==========================================
+  const loadChat = async () => {
+    try {
+      setLoading(true);
+
+      const friendData = await getFriend();
+
+      setNickname(friendData?.nickname || "");
+
+      setFriend({
+        name: friendData?.friend?.name || "Friend",
+        image: friendData?.friend?.image || "",
+      });
+
+      const history = await getHistory();
+
+      const formatted = (history || []).map((msg) => ({
+        sender: msg.sender,
+        text: msg.message,
+        timestamp: msg.createdAt || new Date().toISOString(),
+      }));
+
+      setMessages(formatted);
+    } catch (err) {
+      console.error(err);
+
+      setLoadError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Unable to load chat."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ============================================================
   // Auto Scroll
-  // ==========================================
+  // ============================================================
 
   useEffect(() => {
-
     messagesEndRef.current?.scrollIntoView({
-
       behavior: "smooth",
-
+      block: "end",
     });
-
   }, [messages, typing]);
 
-// ==========================================
-// Helpers
-// ==========================================
+  // ============================================================
+  // Helpers
+  // ============================================================
 
-const delay = (ms) =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+  const wait = (ms) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
 
-const typingDelay = (text) => {
-  const base = 700;
-  const perCharacter = text.length * 20;
+  const typingDelay = (text = "") =>
+    Math.min(700 + text.length * 20, 2500);
 
-  return Math.min(base + perCharacter, 2500);
-};
+  // ============================================================
+  // Send Message
+  // ============================================================
 
-// ==========================================
-// Send Message
-// ==========================================
+  const handleSend = async (text) => {
+    if (!text.trim()) return;
 
-const handleSend = async (text) => {
-
-  if (!text.trim()) return;
-
-  // Show user message instantly
-
-  setMessages((prev) => [
-    ...prev,
-    {
+    const userMessage = {
       sender: "user",
       text,
-    },
-  ]);
+      timestamp: new Date().toISOString(),
+    };
 
-  setTyping(true);
+    setMessages((prev) => [...prev, userMessage]);
 
-  try {
+    setTyping(true);
 
-    const response = await sendMessageToAI(text);
+    try {
+      const response = await sendMessageToAI(text);
 
-    const aiReplies = Array.isArray(response.reply)
-      ? response.reply
-      : [response.reply];
+      const replies = Array.isArray(response.reply)
+        ? response.reply
+        : [response.reply];
 
-    for (let i = 0; i < aiReplies.length; i++) {
+      for (let i = 0; i < replies.length; i++) {
+        const reply = replies[i];
 
-      const reply = aiReplies[i];
+        await wait(typingDelay(reply));
 
-      // Typing delay based on message size
+        setTyping(false);
 
-      await delay(typingDelay(reply));
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "ai",
+            text: reply,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+
+        if (i < replies.length - 1) {
+          setTyping(true);
+        }
+      }
+    } catch (err) {
+      console.error(err);
 
       setTyping(false);
 
@@ -159,86 +146,79 @@ const handleSend = async (text) => {
         ...prev,
         {
           sender: "ai",
-          text: reply,
+          text: "Sorry 😭 Something went wrong. Please try again.",
+          timestamp: new Date().toISOString(),
         },
       ]);
-
-      // Show typing again if another bubble exists
-
-      if (i < aiReplies.length - 1) {
-        setTyping(true);
-      }
-
     }
 
     setTyping(false);
-
-  } catch (error) {
-
-    console.log(error);
-
-    setTyping(false);
-
-  }
-
-};
-
-  // ==========================================
-  // Friend Object
-  // ==========================================
-
-  const friend = {
-    name: friendName,
-    image: friendImage,
   };
 
-  // ==========================================
+  // ============================================================
   // Loading Screen
-  // ==========================================
+  // ============================================================
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-[#090414]">
-        <h1 className="text-white text-2xl">
-          Loading {friendName || "friend"}...
-        </h1>
+      <div className="h-screen w-full flex items-center justify-center bg-[#090414]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 rounded-full border-4 border-violet-500 border-t-transparent animate-spin" />
+          <p className="text-white/80 text-lg">
+            Loading your conversation...
+          </p>
+        </div>
       </div>
     );
   }
 
-  // ==========================================
-  // UI
-  // ==========================================
+  // ============================================================
+  // Error Screen
+  // ============================================================
+
+  if (loadError) {
+    return (
+      <div className="h-screen bg-[#090414] flex items-center justify-center px-6">
+        <div className="max-w-md rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 text-center">
+          <h1 className="text-2xl text-white font-semibold mb-3">
+            Couldn't load chat
+          </h1>
+
+          <p className="text-white/60">
+            {loadError}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // Chat UI
+  // ============================================================
 
   return (
-    <div className="h-screen w-screen bg-[#090414] overflow-hidden flex flex-col">
-
-      <ChatHeader friend={friend} />
-
-      <div
-        className="flex-1 overflow-y-auto px-8 py-8"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at top, rgba(124,92,252,.18), transparent 45%)",
-        }}
-      >
-        {messages.map((message, index) => (
-          <ChatBubble
-            key={index}
-            sender={message.sender}
-            text={message.text}
-            image={friend.image}
+    <ErrorBoundary>
+      <ChatLayout
+        header={
+          <ChatHeader
+            friend={friend}
+            nickname={nickname}
+            isTyping={typing}
           />
-        ))}
-
-        {typing && <TypingIndicator />}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      <MessageInput onSend={handleSend} />
-
-    </div>
+        }
+        input={
+          <MessageInput
+            onSend={handleSend}
+          />
+        }
+      >
+        <MessageList
+  messages={messages}
+  friend={friend}
+  typing={typing}
+  messagesEndRef={messagesEndRef}
+/>
+      </ChatLayout>
+    </ErrorBoundary>
   );
-
 }

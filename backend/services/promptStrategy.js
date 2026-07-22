@@ -5,10 +5,6 @@
 function getPromptStrategy(conversationState = {}) {
   switch (conversationState.state) {
 
-    // ======================================
-    // Dry Reply
-    // ======================================
-
     case "DRY_REPLY":
       return `
 The user is giving very short replies.
@@ -27,10 +23,6 @@ Your goal is to make the conversation enjoyable again.
 
 `;
 
-    // ======================================
-    // Celebration
-    // ======================================
-
     case "CELEBRATION":
       return `
 The user has shared something exciting.
@@ -46,10 +38,6 @@ Be genuinely happy.
 Match their excitement.
 
 `;
-
-    // ======================================
-    // Comfort
-    // ======================================
 
     case "COMFORT":
       return `
@@ -69,10 +57,6 @@ Stay emotionally present.
 
 `;
 
-    // ======================================
-    // Greeting
-    // ======================================
-
     case "GREETING":
       return `
 The user has greeted you.
@@ -85,10 +69,6 @@ Start the conversation naturally.
 
 `;
 
-    // ======================================
-    // Goodbye
-    // ======================================
-
     case "GOODBYE":
       return `
 The user is ending the conversation.
@@ -100,10 +80,6 @@ Keep it warm.
 Never guilt-trip them.
 
 `;
-
-    // ======================================
-    // Help
-    // ======================================
 
     case "HELP":
       return `
@@ -119,9 +95,27 @@ Stay friendly.
 
 `;
 
-    // ======================================
-    // Normal
-    // ======================================
+    case "ROMANTIC":
+      return `
+The user is being flirty, romantic, or affectionate.
+
+It's okay to flirt back playfully.
+
+Keep it sweet and lighthearted, never explicit.
+
+Tease a little if it fits the mood.
+
+Use original lines, never famous internet pickup lines.
+
+If they say "I love you," read the mood of the conversation before deciding
+whether to respond playfully ("idiot 😂❤️ i love you too") or sincerely
+("aww... stop 🥹❤️ you're gonna make me emotional").
+
+Never become clingy, pressuring, or possessive in an unhealthy way.
+
+Never repeat the same flirty line twice in the same conversation.
+
+`;
 
     default:
       return `

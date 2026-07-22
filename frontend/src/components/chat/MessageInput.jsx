@@ -1,18 +1,43 @@
-import { FiSend } from "react-icons/fi";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { motion } from "framer-motion";
+import {
+  FiSend,
+  FiSmile,
+  FiPaperclip,
+} from "react-icons/fi";
 
 export default function MessageInput({ onSend }) {
-
   const [message, setMessage] = useState("");
+  const textareaRef = useRef(null);
+
+  const resizeTextarea = () => {
+    const textarea = textareaRef.current;
+
+    if (!textarea) return;
+
+    textarea.style.height = "0px";
+
+    textarea.style.height =
+      Math.min(textarea.scrollHeight, 180) + "px";
+  };
+
+  const handleChange = (e) => {
+    setMessage(e.target.value);
+    resizeTextarea();
+  };
 
   const send = () => {
+    const text = message.trim();
 
-    if (!message.trim()) return;
+    if (!text) return;
 
-    onSend(message);
+    onSend(text);
 
     setMessage("");
 
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "48px";
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -23,22 +48,159 @@ export default function MessageInput({ onSend }) {
   };
 
   return (
-    <div className="w-full flex gap-4 p-5 border-t border-white/10 backdrop-blur-xl bg-white/5">
+    <div className="w-full">
 
-      <input
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Type something..."
-        className="flex-1 rounded-full px-6 py-4 bg-white/10 text-white outline-none placeholder:text-white/40"
-      />
+      <div
+        className="
+          flex
+          items-center
+          gap-3
 
-      <button
-        onClick={send}
-        className="w-14 h-14 rounded-full bg-[#9A5DFF] text-white flex items-center justify-center hover:scale-110 transition"
+          px-4
+          py-3
+
+          rounded-[28px]
+
+          border
+          border-white/10
+
+          bg-white/[0.05]
+
+          backdrop-blur-2xl
+        "
       >
-        <FiSend />
-      </button>
+
+        {/* Emoji */}
+
+        <motion.button
+          whileHover={{ scale: 1.12 }}
+          whileTap={{ scale: 0.9 }}
+          className="
+            shrink-0
+
+            h-10
+            w-10
+
+            rounded-full
+
+            flex
+            items-center
+            justify-center
+
+            text-white/60
+
+            hover:bg-white/10
+            hover:text-violet-300
+
+            transition-all
+          "
+        >
+          <FiSmile size={20} />
+        </motion.button>
+
+        {/* Attachment */}
+
+        <motion.button
+          whileHover={{ scale: 1.12 }}
+          whileTap={{ scale: 0.9 }}
+          className="
+            shrink-0
+
+            h-10
+            w-10
+
+            rounded-full
+
+            flex
+            items-center
+            justify-center
+
+            text-white/60
+
+            hover:bg-white/10
+            hover:text-violet-300
+
+            transition-all
+          "
+        >
+          <FiPaperclip size={20} />
+        </motion.button>
+
+        {/* Textarea */}
+
+        <textarea
+          ref={textareaRef}
+          rows={1}
+          value={message}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          placeholder="Message Aura..."
+          className="
+            flex-1
+
+            bg-transparent
+
+            resize-none
+
+            outline-none
+
+            text-white
+
+            placeholder:text-white/40
+
+            leading-7
+
+            py-3
+
+            min-h-[48px]
+            max-h-[180px]
+
+            overflow-y-auto
+          "
+        />
+
+        {/* Send */}
+
+        <motion.button
+          whileHover={{
+            scale: 1.08,
+          }}
+          whileTap={{
+            scale: 0.95,
+          }}
+          onClick={send}
+          disabled={!message.trim()}
+          className="
+            shrink-0
+
+            h-12
+            w-12
+
+            rounded-full
+
+            flex
+            items-center
+            justify-center
+
+            bg-gradient-to-r
+            from-violet-500
+            via-fuchsia-500
+            to-purple-400
+
+            text-white
+
+            shadow-[0_0_30px_rgba(168,85,247,.55)]
+
+            disabled:opacity-40
+            disabled:cursor-not-allowed
+
+            transition-all
+          "
+        >
+          <FiSend size={18} />
+        </motion.button>
+
+      </div>
 
     </div>
   );

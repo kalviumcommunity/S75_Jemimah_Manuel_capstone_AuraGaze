@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 import bgImg from "../../assets/images/background/bg.png";
 
-import OnboardingLayout from "../../components/OnboardingLayout";
+import AuthLayout from "../../components/layout/AuthLayout";
 import { useOnboarding } from "../../context/OnboardingContext";
 
 export default function Age() {
@@ -25,7 +25,7 @@ export default function Age() {
   };
 
   return (
-    <OnboardingLayout
+    <AuthLayout
       step={5}
       totalSteps={5}
       title="How old would you like me to be?"
@@ -130,6 +130,6 @@ export default function Age() {
 
         </motion.div>
       )}
-    </OnboardingLayout>
+    </AuthLayout>
   );
 }

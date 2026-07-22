@@ -1,6 +1,7 @@
 const dailyGreeting = require("./dailyGreeting");
 const importantDays = require("./importantDays");
 const reconnect = require("./reconnect");
+const storyStarter = require("./storyStarter");
 
 // ==========================================
 // Run All Scheduler Modules
@@ -28,6 +29,13 @@ async function runScheduler({
 
     // User inactive
     await reconnect({
+      user,
+      chatHistory,
+      memories,
+    });
+
+    // Occasional unprompted story / random thought
+    await storyStarter({
       user,
       chatHistory,
       memories,

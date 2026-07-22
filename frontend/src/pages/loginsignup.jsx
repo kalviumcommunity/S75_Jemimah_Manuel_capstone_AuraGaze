@@ -1,151 +1,172 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
-import bgImg from "../assets/images/background/bg.png";
+import AuthLayout from "../components/layout/AuthLayout";
+
+import Typography from "../components/ui/Typography";
+import PrimaryButton from "../components/ui/PrimaryButton";
+import SecondaryButton from "../components/ui/SecondaryButton";
+
+import spacing from "../theme/spacing";
+import animations from "../theme/animations";
 
 export default function LoginSignup() {
   const navigate = useNavigate();
 
   return (
-    <div className="relative min-h-screen overflow-hidden flex items-center justify-center bg-[#090413]">
+    <AuthLayout size="md">
 
-      {/* Background */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: `url(${bgImg})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      />
+      {/* ===========================================
+          Hero Section
+      =========================================== */}
 
-      {/* Dark Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/55" />
-
-      {/* Purple Glow */}
-      <div className="absolute w-[900px] h-[900px] rounded-full bg-[#8B5CFF]/20 blur-[220px]" />
-
-      {/* Welcome Card */}
       <motion.div
-        initial={{ opacity: 0, y: 45, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.7 }}
-        className="
-          relative
-          z-10
-          w-[92%]
-          max-w-[780px]
-          rounded-[42px]
-          border
-          border-white/15
-          bg-white/[0.08]
-          backdrop-blur-[35px]
-          shadow-[0_30px_120px_rgba(0,0,0,0.55)]
-          px-20
-          py-16
-        "
+        initial={animations.fadeUp.hidden}
+        animate={animations.fadeUp.visible}
+        transition={{
+          duration: animations.duration.slow,
+        }}
+        style={{
+          textAlign: "center",
+        }}
       >
-        {/* Welcome */}
-        <motion.h1
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.15 }}
-          className="text-center text-white text-7xl font-semibold"
+
+        {/* ======================================
+            Brand
+        ====================================== */}
+
+        <motion.div
+          animate={{
+            y: [0, -4, 0],
+          }}
+          transition={{
+            duration: 5,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
           style={{
-            fontFamily: "'Playfair Display', serif",
-            textShadow:
-              "0 0 22px rgba(220,190,255,0.95), 0 0 50px rgba(155,92,255,0.6)",
+            fontSize: "46px",
+            marginBottom: spacing.margin.md,
+          }}
+        >
+          
+        </motion.div>
+
+        <Typography
+          variant="caption"
+          align="center"
+          style={{
+            letterSpacing: "0.35em",
+            marginBottom: spacing.margin.sm,
+          }}
+        >
+          AURA GAZE ✨
+        </Typography>
+
+        <Typography
+          variant="hero"
+          align="center"
+          animate
+          style={{
+            marginBottom: spacing.margin.md,
           }}
         >
           Welcome
-        </motion.h1>
+        </Typography>
 
-        {/* Subtitle */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="mt-7 text-center text-[21px] leading-9 text-[#D8C8FF]"
+        <Typography
+          variant="subtitle"
+          align="center"
+          style={{
+            maxWidth: 480,
+            margin: "0 auto",
+          }}
         >
-          Every meaningful friendship starts with a simple hello.
-          <br />
-          Let's begin yours today.
-          <span className="ml-2">💜</span>
-        </motion.p>
+          Every meaningful friendship begins with
+          one simple conversation.
+        </Typography>
 
-        {/* Buttons */}
-        <div className="mt-16 space-y-7">
+        <Typography
+          variant="body"
+          align="center"
+          style={{
+            marginTop: spacing.margin.lg,
+            opacity: 0.9,
+          }}
+        >
+          Your AI companion is waiting 💜
+        </Typography>
 
-          {/* Login */}
-          <motion.button
-            whileHover={{
-              scale: 1.02,
-              boxShadow: "0 0 45px rgba(180,120,255,0.55)",
-            }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate("/login")}
-            className="
-              w-full
-              h-[60px]
-              rounded-full
-              bg-gradient-to-r
-              from-[#8F5BFF]
-              via-[#A96FFF]
-              to-[#C58CFF]
-              text-white
-              text-[20px]
-              font-semibold
-              tracking-wide
-              shadow-[0_12px_35px_rgba(157,92,255,0.45)]
-              transition-all
-              duration-300
-            "
-          >
-            Continue with Login
-          </motion.button>
-
-          {/* Divider */}
-          <div className="flex items-center gap-5">
-            <div className="flex-1 h-px bg-white/15" />
-
-            <span className="text-white/45 text-sm tracking-[8px]">
-              OR
-            </span>
-
-            <div className="flex-1 h-px bg-white/15" />
-          </div>
-
-          {/* Signup */}
-          <motion.button
-            whileHover={{
-              scale: 1.02,
-            }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate("/signup")}
-            className="
-              w-full
-              h-[60px]
-              rounded-full
-              border
-              border-white/20
-              bg-white/10
-              backdrop-blur-xl
-              text-white
-              text-[20px]
-              font-semibold
-              tracking-wide
-              transition-all
-              duration-300
-              hover:bg-white/15
-              hover:border-[#D5B3FF]
-            "
-          >
-            Create New Journey
-          </motion.button>
-
-        </div>
       </motion.div>
-    </div>
+
+      {/* ===========================================
+          Buttons
+      =========================================== */}
+
+      <div
+        style={{
+          marginTop: spacing.margin.hero,
+        }}
+      >
+                <PrimaryButton
+          size="lg"
+          onClick={() => navigate("/login")}
+        >
+          Continue with Login
+        </PrimaryButton>
+
+        {/* ======================================
+            Divider
+        ====================================== */}
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: spacing.gap.md,
+            marginTop: spacing.margin.lg,
+            marginBottom: spacing.margin.lg,
+          }}
+        >
+          <div
+            style={{
+              flex: 1,
+              height: 1,
+              background:
+                "linear-gradient(to right, transparent, rgba(255,255,255,.18), transparent)",
+            }}
+          />
+
+          <Typography
+            variant="caption"
+            align="center"
+            style={{
+              opacity: 0.65,
+              textTransform: "uppercase",
+            }}
+          >
+            OR
+          </Typography>
+
+          <div
+            style={{
+              flex: 1,
+              height: 1,
+              background:
+                "linear-gradient(to left, transparent, rgba(255,255,255,.18), transparent)",
+            }}
+          />
+        </div>
+
+        <SecondaryButton
+          size="lg"
+          variant="glass"
+          onClick={() => navigate("/signup")}
+        >
+          Begin a New Friendship
+        </SecondaryButton>
+      </div>
+
+    </AuthLayout>
   );
 }

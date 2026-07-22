@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
-import OnboardingLayout from "../../components/OnboardingLayout";
+import AuthLayout from "../../components/layout/AuthLayout";
 import { useOnboarding } from "../../context/OnboardingContext";
 import bgImg from "../../assets/images/background/bg.png";
 
@@ -26,7 +26,7 @@ export default function FriendName() {
   };
 
   return (
-    <OnboardingLayout
+    <AuthLayout size="md"
       step={2}
       totalSteps={5}
       title="What should your best friend be called?"
@@ -100,6 +100,6 @@ export default function FriendName() {
           </motion.p>
         </motion.div>
       )}
-    </OnboardingLayout>
+    </AuthLayout>
   );
 }

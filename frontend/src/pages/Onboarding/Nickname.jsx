@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { useOnboarding } from "../../context/OnboardingContext";
 
-import OnboardingLayout from "../../components/OnboardingLayout";
+import AuthLayout from "../../components/layout/AuthLayout";;
 import bgImg from "../../assets/images/background/bg.png";
 
 import { motion } from "framer-motion";
@@ -28,7 +28,7 @@ export default function Nickname() {
   };
 
   return (
-    <OnboardingLayout
+    <AuthLayout size="md"
       step={1}
       totalSteps={5}
       title="What should I call you?"
@@ -102,6 +102,6 @@ export default function Nickname() {
           </motion.p>
         </motion.div>
       )}
-    </OnboardingLayout>
+    </AuthLayout>
   );
 }

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-import OnboardingLayout from "../../components/OnboardingLayout";
+import AuthLayout from "../../components/layout/AuthLayout";
 import { useOnboarding } from "../../context/OnboardingContext";
 
 import { friends } from "../../data/friends";

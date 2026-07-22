@@ -13,10 +13,6 @@ async function dailyGreeting({
   try {
     const now = new Date();
 
-    // ----------------------------------
-    // Decide Greeting Type
-    // ----------------------------------
-
     let eventType = null;
 
     const hour = now.getHours();
@@ -31,16 +27,8 @@ async function dailyGreeting({
       return;
     }
 
-    // ----------------------------------
-    // Beginning of Today
-    // ----------------------------------
-
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
-
-    // ----------------------------------
-    // Already Sent This Greeting Today?
-    // ----------------------------------
 
     const alreadySent = await Chat.findOne({
       user: user._id,
@@ -55,10 +43,6 @@ async function dailyGreeting({
       return;
     }
 
-    // ----------------------------------
-    // Has User Already Chatted Today?
-    // ----------------------------------
-
     const userTalkedToday = await Chat.findOne({
       user: user._id,
       sender: "user",
@@ -67,26 +51,16 @@ async function dailyGreeting({
       },
     });
 
-    // If user has already chatted today,
-    // don't interrupt with another greeting.
     if (userTalkedToday) {
       return;
     }
 
-    // ----------------------------------
-    // Generate Greeting
-    // ----------------------------------
-
     const greeting = await generateEventMessage({
-      eventType,
+      event: eventType,
       userProfile: user,
       chatHistory,
       memories,
     });
-
-    // ----------------------------------
-    // Save Greeting
-    // ----------------------------------
 
     await Chat.create({
       user: user._id,

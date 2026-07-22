@@ -6,7 +6,7 @@ import femaleImg from "../../assets/images/gender/female.png";
 import maleImg from "../../assets/images/gender/male.png";
 import bgImg from "../../assets/images/background/bg.png";
 
-import OnboardingLayout from "../../components/OnboardingLayout";
+import AuthLayout from "../../components/layout/AuthLayout";
 import { useOnboarding } from "../../context/OnboardingContext";
 
 export default function Gender() {
@@ -28,7 +28,7 @@ export default function Gender() {
   };
 
   return (
-    <OnboardingLayout
+    <AuthLayout size="md"
       step={4}
       totalSteps={5}
       title="Who would you feel the most comfortable talking to?"
@@ -169,6 +169,6 @@ export default function Gender() {
           </motion.p>
         </motion.div>
       )}
-    </OnboardingLayout>
+    </AuthLayout>
   );
 }

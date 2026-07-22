@@ -4,9 +4,9 @@ import "./App.css";
 
 // Home
 import Home from "./pages/Home";
-import LoginSignup from "./pages/loginsignup";
-import Login from "./pages/login";
-import Signup from "./pages/signup";
+import LoginSignup from "./pages/Loginsignup";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 
 // Onboarding
 import Nickname from "./pages/Onboarding/Nickname";
@@ -18,7 +18,7 @@ import FriendSelection from "./pages/Onboarding/FriendSelection";
 import CreatingFriend from "./pages/Onboarding/CreatingFriend";
 
 // Chat
-import Chat from "./pages/chat";
+import Chat from "./pages/Chat";
 
 function App() {
   return (

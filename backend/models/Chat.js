@@ -32,6 +32,8 @@ const chatSchema = new mongoose.Schema({
       "INTERVIEW",
       "EXAM",
       "CONVERSATION_STARTER",
+      "FIRST_MESSAGE",
+      "STORY_STARTER",
     ],
     default: "CHAT",
   },

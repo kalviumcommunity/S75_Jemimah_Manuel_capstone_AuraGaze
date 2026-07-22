@@ -80,7 +80,7 @@ async function importantDays({
     // ----------------------------------
 
     const message = await generateEventMessage({
-      eventType,
+      event: eventType,
       userProfile: user,
       chatHistory,
       memories,

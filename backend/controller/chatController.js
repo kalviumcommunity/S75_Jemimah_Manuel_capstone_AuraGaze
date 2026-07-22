@@ -3,6 +3,7 @@ const User = require("../models/user");
 
 const { generateReply } = require("../services/aiService");
 const runScheduler = require("../services/scheduler");
+const sendFirstMessageIfNeeded = require("../services/scheduler/firstMessage");
 
 const {
   getMemories,
@@ -41,10 +42,6 @@ const sendMessage = async (req, res) => {
       });
     }
 
-    // ----------------------------------
-    // Load User
-    // ----------------------------------
-
     const user = await User.findById(userId);
 
     if (!user) {
@@ -53,10 +50,6 @@ const sendMessage = async (req, res) => {
       });
     }
 
-    // ----------------------------------
-    // Save User Message
-    // ----------------------------------
-
     await Chat.create({
       user: userId,
       sender: "user",
@@ -64,38 +57,18 @@ const sendMessage = async (req, res) => {
       messageType: "CHAT",
     });
 
-    // ----------------------------------
-    // Load Chat History
-    // ----------------------------------
-
     let chatHistory = await Chat.find({
       user: userId,
     }).sort({
       createdAt: 1,
     });
 
-    // ----------------------------------
-    // Load Memories
-    // ----------------------------------
-
     const memories = await getMemories(userId);
-
-    // ----------------------------------
-    // Load Relationship
-    // ----------------------------------
 
     const relationship = await getRelationship(userId);
 
-    // ----------------------------------
-    // Connection Brain
-    // ----------------------------------
-
     const conversationState =
       detectConversationState(userMessage);
-
-    // ----------------------------------
-    // Generate Aura Reply
-    // ----------------------------------
 
     const aiReply = await generateReply({
       userMessage,
@@ -106,15 +79,7 @@ const sendMessage = async (req, res) => {
       conversationState,
     });
 
-    // ----------------------------------
-    // Split Into WhatsApp Messages
-    // ----------------------------------
-
     const aiReplies = composeMessages(aiReply);
-
-    // ----------------------------------
-    // Save Every Bubble
-    // ----------------------------------
 
     for (const reply of aiReplies) {
 
@@ -127,19 +92,11 @@ const sendMessage = async (req, res) => {
 
     }
 
-    // ----------------------------------
-    // Reload Chat History
-    // ----------------------------------
-
     chatHistory = await Chat.find({
       user: userId,
     }).sort({
       createdAt: 1,
     });
-
-    // ----------------------------------
-    // Learning Brain
-    // ----------------------------------
 
     const extractionResult =
       await extractMemory({
@@ -152,18 +109,10 @@ const sendMessage = async (req, res) => {
       extractionResult,
     });
 
-    // ----------------------------------
-    // Relationship Brain
-    // ----------------------------------
-
     await updateRelationship({
       user: userId,
       userMessage,
     });
-
-    // ----------------------------------
-    // Return Reply
-    // ----------------------------------
 
     res.status(200).json({
       reply: aiReplies,
@@ -205,11 +154,26 @@ const getMessages = async (req, res) => {
 
     const memories = await getMemories(userId);
 
-    await runScheduler({
+    // ----------------------------------
+    // First Ever Message (before scheduler)
+    // ----------------------------------
+    // If this user has never had ANY chat message,
+    // send a dedicated "we're meeting for the first time"
+    // message instead of letting the daily greeting /
+    // reconnect scheduler treat it like a returning user.
+
+    const firstMessageSent = await sendFirstMessageIfNeeded({
       user,
-      chatHistory,
       memories,
     });
+
+    if (!firstMessageSent) {
+      await runScheduler({
+        user,
+        chatHistory,
+        memories,
+      });
+    }
 
     chatHistory = await Chat.find({
       user: userId,
