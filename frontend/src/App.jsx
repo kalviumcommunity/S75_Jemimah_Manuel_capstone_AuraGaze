@@ -4,7 +4,7 @@ import "./App.css";
 
 // Home
 import Home from "./pages/Home";
-import LoginSignup from "./pages/Loginsignup";
+import LoginSignup from "./pages/LoginSignup";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 
@@ -24,37 +24,20 @@ function App() {
   return (
     <Router>
       <Routes>
-
-        {/* Authentication */}
-
         <Route path="/" element={<Home />} />
-
         <Route path="/loginsignup" element={<LoginSignup />} />
-
         <Route path="/login" element={<Login />} />
-
         <Route path="/signup" element={<Signup />} />
 
-
-
-        {/* Onboarding */}
-
         <Route path="/nickname" element={<Nickname />} />
-
         <Route path="/friend-name" element={<FriendName />} />
-
         <Route path="/dob" element={<DOB />} />
-
         <Route path="/gender" element={<Gender />} />
-
         <Route path="/age" element={<Age />} />
-
         <Route path="/friend-selection" element={<FriendSelection />} />
-
         <Route path="/creating-friend" element={<CreatingFriend />} />
 
         <Route path="/chat" element={<Chat />} />
-
       </Routes>
     </Router>
   );
