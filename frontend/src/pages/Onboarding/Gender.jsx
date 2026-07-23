@@ -4,10 +4,13 @@ import { motion } from "framer-motion";
 
 import femaleImg from "../../assets/images/gender/female.png";
 import maleImg from "../../assets/images/gender/male.png";
-import bgImg from "../../assets/images/background/bg.png";
 
 import AuthLayout from "../../components/layout/AuthLayout";
+import Typography from "../../components/ui/Typography";
+import PrimaryButton from "../../components/ui/PrimaryButton";
+
 import { useOnboarding } from "../../context/OnboardingContext";
+import spacing from "../../theme/spacing";
 
 export default function Gender() {
   const navigate = useNavigate();
@@ -28,15 +31,52 @@ export default function Gender() {
   };
 
   return (
-    <AuthLayout size="md"
-      step={4}
-      totalSteps={5}
-      title="Who would you feel the most comfortable talking to?"
-      subtitle="The person you choose will always be here for you. 💜"
-      bgImage={bgImg}
-    >
+    <AuthLayout size="md">
       {!showReply ? (
         <>
+          {/* ===========================
+              Hero Section
+          =========================== */}
+
+          <div
+  style={{
+    marginBottom: spacing.margin.lg,
+  }}
+>
+  <Typography
+    variant="hero"
+    align="center"
+    animate
+    style={{
+      marginBottom: spacing.margin.sm,
+      fontFamily: "'Playfair Display', serif",
+      fontSize: "clamp(26px, 3.5vw, 34px)",
+      lineHeight: 1.25,
+      textShadow:
+        "0 0 12px rgba(197,140,255,0.85), 0 0 28px rgba(157,92,255,0.6), 0 0 55px rgba(124,92,252,0.45)",
+    }}
+  >
+    Who would you feel the most comfortable talking to?
+  </Typography>
+
+  <Typography
+    variant="subtitle"
+    align="center"
+    animate
+    style={{
+      maxWidth: 480,
+      margin: "0 auto",
+      lineHeight: 1.5,
+    }}
+  >
+    The person you choose will always be here for you.{"\u00A0"}💜
+  </Typography>
+</div>
+
+          {/* ===========================
+              Gender Selection
+          =========================== */}
+
           <div className="grid grid-cols-2 gap-6">
             {/* Female */}
             <motion.div
@@ -55,7 +95,6 @@ export default function Gender() {
                 className="w-full h-[420px] object-cover object-top"
               />
 
-              {/* Subtle bottom gradient for text legibility only — NOT a blur over the image */}
               <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#1A0B33]/90 to-transparent pointer-events-none" />
 
               <div className="absolute bottom-6 left-0 right-0 text-center">
@@ -118,13 +157,11 @@ export default function Gender() {
             </motion.div>
           </div>
 
-          <button
-            onClick={handleContinue}
-            disabled={!gender}
-            className="mt-10 w-full rounded-2xl py-4 text-lg font-semibold text-white bg-gradient-to-r from-[#9A5DFF] to-[#C58CFF] shadow-[0_0_25px_rgba(157,92,255,0.6)] hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Continue →
-          </button>
+          <div style={{ marginTop: spacing.margin.xl }}>
+            <PrimaryButton onClick={handleContinue} disabled={!gender}>
+              Continue →
+            </PrimaryButton>
+          </div>
         </>
       ) : (
         <motion.div
@@ -150,23 +187,27 @@ export default function Gender() {
             />
           </div>
 
-          <motion.h2
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1 }}
-            className="text-3xl text-white"
+          <Typography
+            variant="hero"
+            align="center"
+            style={{
+              fontFamily: "'Playfair Display', serif",
+              textShadow:
+                "0 0 12px rgba(197,140,255,0.85), 0 0 28px rgba(157,92,255,0.6), 0 0 55px rgba(124,92,252,0.45)",
+            }}
           >
-            Got it 💜
-          </motion.h2>
+            Got it{"\u00A0"}💜
+          </Typography>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 2 }}
-            className="mt-5 text-white/70 text-lg"
+          <Typography
+            variant="subtitle"
+            align="center"
+            style={{
+              marginTop: spacing.margin.md,
+            }}
           >
             I'll make sure you always feel heard and understood.
-          </motion.p>
+          </Typography>
         </motion.div>
       )}
     </AuthLayout>

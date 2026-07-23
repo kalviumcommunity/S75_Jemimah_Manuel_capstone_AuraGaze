@@ -66,7 +66,7 @@ export default function Signup() {
       <div
         style={{
           position: "relative",
-          marginBottom: spacing.margin.xl,
+          marginBottom: spacing.margin.lg,
         }}
       >
         <Typography
@@ -74,8 +74,10 @@ export default function Signup() {
           align="center"
           animate
           style={{
-            marginBottom: spacing.margin.md,
+            marginBottom: spacing.margin.sm,
             fontFamily: "'Playfair Display', serif",
+            fontSize: "clamp(42px, 6vw, 64px)",
+            lineHeight: 1.15,
             textShadow:
               "0 0 12px rgba(197,140,255,0.85), 0 0 28px rgba(157,92,255,0.6), 0 0 55px rgba(124,92,252,0.45)",
           }}
@@ -84,19 +86,21 @@ export default function Signup() {
         </Typography>
 
         <Typography
-          variant="subtitle"
-          align="center"
-          animate
-          style={{
-            maxWidth: 420,
-            margin: "0 auto",
-            lineHeight: 1.8,
-          }}
-        >
-          Begin your beautiful friendship journey.
-          <br />
-          Create your account and get started 💜
-        </Typography>
+  variant="subtitle"
+  align="center"
+  animate
+  style={{
+    maxWidth: 420,
+    margin: "0 auto",
+    fontSize: "16px",
+    lineHeight: 1.6,
+    opacity: 0.9,
+  }}
+>
+  Begin your beautiful friendship journey.
+  <br />
+  Create your account and get started{"\u00A0"}💜
+</Typography>
       </div>
 
       {/* ===========================
@@ -169,7 +173,7 @@ export default function Signup() {
           error={error === "Passwords do not match." ? error : undefined}
         />
 
-        <div style={{ marginTop: spacing.margin.xl }}>
+        <div style={{ marginTop: spacing.margin.lg }}>
           <PrimaryButton type="submit" loading={loading}>
             {loading ? "Creating Account..." : "Create Account"}
           </PrimaryButton>
@@ -178,8 +182,8 @@ export default function Signup() {
         <div
           className="flex items-center"
           style={{
-            marginTop: spacing.margin.xl,
-            marginBottom: spacing.margin.xl,
+            marginTop: spacing.margin.lg,
+            marginBottom: spacing.margin.lg,
             gap: spacing.margin.md,
           }}
         >

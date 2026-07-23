@@ -1,403 +1,232 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useMemo } from "react";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 import AuthLayout from "../../components/layout/AuthLayout";
+import Typography from "../../components/ui/Typography";
+import FriendCarousel from "../../components/ui/FriendCarousel";
+
+import spacing from "../../theme/spacing";
+
 import { useOnboarding } from "../../context/OnboardingContext";
-
 import { friends } from "../../data/friends";
-
-import bgImg from "../../assets/images/background/bg.png";
 
 const backendURL = import.meta.env.VITE_BACKEND_URL;
 
 export default function FriendSelection() {
-
-    const navigate = useNavigate();
-
-    const {
-        onboardingData,
-        updateField
-    } = useOnboarding();
-
-    const {
-        gender,
-        age,
-        friendName
-    } = onboardingData;
-
-    const [images, setImages] = useState([]);
-
-    const [current, setCurrent] = useState(0);
-
-    const [selectedImage, setSelectedImage] = useState("");
-
-
-
-    // ===========================
-    // Decide Images
-    // ===========================
-
-    useEffect(() => {
-
-        let imageArray = [];
-
-        if (gender === "male") {
-
-            if (age >= 6 && age <= 18) {
-
-                imageArray = friends.school_boy;
-
-            }
-
-            else if (age <= 40) {
-
-                imageArray = friends.young_men;
-
-            }
-
-            else {
-
-                imageArray = friends.old_men;
-
-            }
-
-        }
-
-        else {
-
-            if (age >= 6 && age <= 18) {
-
-                imageArray = friends.school_girl;
-
-            }
-
-            else if (age <= 40) {
-
-                imageArray = friends.young_women;
-
-            }
-
-            else {
-
-                imageArray = friends.old_women;
-
-            }
-
-        }
-
-        setImages(imageArray);
-
-        setSelectedImage(imageArray[0]);
-
-    }, [gender, age]);
-
-
-
-    // ===========================
-    // Previous Card
-    // ===========================
-
-    const previousIndex =
-        current === 0
-            ? images.length - 1
-            : current - 1;
-
-
-
-    // ===========================
-    // Next Card
-    // ===========================
-
-    const nextIndex =
-        current === images.length - 1
-            ? 0
-            : current + 1;
-
-
-
-    // ===========================
-    // Next
-    // ===========================
-
-    const next = () => {
-
-        const newIndex =
-            current === images.length - 1
-                ? 0
-                : current + 1;
-
-        setCurrent(newIndex);
-
-        setSelectedImage(images[newIndex]);
-
-    };
-
-
-
-    // ===========================
-    // Previous
-    // ===========================
-
-    const previous = () => {
-
-        const newIndex =
-            current === 0
-                ? images.length - 1
-                : current - 1;
-
-        setCurrent(newIndex);
-
-        setSelectedImage(images[newIndex]);
-
-    };
-
-
-
-    // ===========================
-    // Continue
-    // ===========================
-
-const handleContinue = async () => {
-
-  try {
-
-    const token = localStorage.getItem("token");
-
-    await axios.put(
-
-      `${backendURL}/api/onboarding/save`,
-
-      {
-
-        nickname: onboardingData.nickname,
-
-        dob: onboardingData.dob,
-
-        friendName: onboardingData.friendName,
-
-        gender: onboardingData.gender,
-
-        age: onboardingData.age,
-
-        image: selectedImage,
-
-      },
-
-      {
-
-        headers: {
-
-          Authorization: `Bearer ${token}`,
-
-        },
-
+  const navigate = useNavigate();
+
+  const { onboardingData, updateField } = useOnboarding();
+  const { gender, age, friendName } = onboardingData;
+
+  const [images, setImages] = useState([]);
+  const [current, setCurrent] = useState(0);
+  const [selectedImage, setSelectedImage] = useState("");
+
+  const companionQuotes = useMemo(
+    () => [
+      "I've been waiting to meet you. 💜",
+      "Let's create unforgettable memories together.",
+      "You'll never have to feel alone again.",
+      "I'll always be here whenever you need me.",
+      "Our story begins today ✨",
+      "Every adventure starts with one hello.",
+      "I'm excited to know everything about you.",
+      "Let's laugh, dream and grow together.",
+      "Your happiness matters to me.",
+      "I can't wait to become your best friend.",
+    ],
+    []
+  );
+
+  useEffect(() => {
+    let imageArray = [];
+
+    if (gender === "male") {
+      if (age >= 6 && age <= 18) {
+        imageArray = friends.school_boy;
+      } else if (age <= 40) {
+        imageArray = friends.young_men;
+      } else {
+        imageArray = friends.old_men;
       }
+    } else {
+      if (age >= 6 && age <= 18) {
+        imageArray = friends.school_girl;
+      } else if (age <= 40) {
+        imageArray = friends.young_women;
+      } else {
+        imageArray = friends.old_women;
+      }
+    }
 
-    );
+    setImages(imageArray);
+    setCurrent(0);
+    setSelectedImage(imageArray[0]);
+  }, [gender, age]);
 
-    updateField("image", selectedImage);
+  const previous = () => {
+    const index = current === 0 ? images.length - 1 : current - 1;
+    setCurrent(index);
+    setSelectedImage(images[index]);
+  };
 
-    navigate("/creating-friend");
+  const next = () => {
+    const index = current === images.length - 1 ? 0 : current + 1;
+    setCurrent(index);
+    setSelectedImage(images[index]);
+  };
 
-  } catch (error) {
+  const handleContinue = async () => {
+    try {
+      const token = localStorage.getItem("token");
 
-  console.log("FULL ERROR:", error);
+      await axios.put(
+        `${backendURL}/api/onboarding/save`,
+        {
+          nickname: onboardingData.nickname,
+          dob: onboardingData.dob,
+          friendName: onboardingData.friendName,
+          gender: onboardingData.gender,
+          age: onboardingData.age,
+          image: selectedImage,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-  console.log("RESPONSE:", error.response);
+      updateField("image", selectedImage);
+      navigate("/creating-friend");
+    } catch (error) {
+      console.log(error);
+      alert(error.response?.data?.message || "Unable to save onboarding.");
+    }
+  };
 
-  console.log("DATA:", error.response?.data);
+  return (
+    <AuthLayout size="lg">
+      {/* ==========================================
+          Hero Section
+      ========================================== */}
 
-  alert(error.response?.data?.message || "Unable to save onboarding.");
-
-}
-
-};
-
-      return (
-    <div
-      className="min-h-screen bg-cover bg-center flex items-center justify-center px-10"
-      style={{
-        backgroundImage: `url(${bgImg})`,
-      }}
-    >
-      <div className="w-full max-w-7xl">
-
-        {/* Heading */}
-
-        <motion.h1
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center text-5xl font-bold text-white mb-3"
+      <div
+        style={{
+          position: "relative",
+          marginBottom: spacing.margin["2xl"],
+        }}
+      >
+        <motion.div
+          animate={{
+            scale: [1, 1.08, 1],
+            opacity: [0.45, 0.75, 0.45],
+          }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
           style={{
-            fontFamily: "'Playfair Display', serif",
-            textShadow: "0 0 20px rgba(197,140,255,.9)",
+            position: "absolute",
+            left: "50%",
+            top: "-35px",
+            transform: "translateX(-50%)",
+            width: 520,
+            height: 220,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(circle, rgba(168,85,247,.22) 0%, rgba(168,85,247,.10) 45%, transparent 75%)",
+            filter: "blur(70px)",
+            pointerEvents: "none",
+            zIndex: 0,
+          }}
+        />
+
+        <Typography
+          variant="caption"
+          align="center"
+          animate
+          style={{
+            position: "relative",
+            zIndex: 2,
+            display: "block",
+            marginBottom: spacing.margin.md,
+            letterSpacing: "8px",
+            textTransform: "uppercase",
+            opacity: 0.85,
+          }}
+        >
+          STEP 6 OF 6 ✨
+        </Typography>
+
+        <Typography
+          variant="hero"
+          align="center"
+          animate
+          style={{
+            position: "relative",
+            zIndex: 2,
+            marginBottom: spacing.margin.sm,
+            background:
+              "linear-gradient(180deg,#FFFFFF 0%,#FFFFFF 30%,#F7F0FF 60%,#E6D4FF 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            textShadow: `
+              0 0 8px rgba(255,255,255,.95),
+              0 0 18px rgba(255,255,255,.80),
+              0 0 36px rgba(168,85,247,.55),
+              0 0 72px rgba(139,92,246,.40),
+              0 0 120px rgba(168,85,247,.22)
+            `,
           }}
         >
           Choose Your Best Friend
-        </motion.h1>
+        </Typography>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: .3 }}
-          className="text-center text-white/70 text-lg mb-16"
-        >
-          The one you choose will always stay beside you.
-        </motion.p>
-
-        {/* Carousel */}
-
-        <div className="flex justify-center items-center gap-8">
-
-          {/* Previous Card */}
-
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            onClick={previous}
-            className="cursor-pointer"
-          >
-            <img
-              src={images[previousIndex]}
-              alt="Previous"
-              className="w-56 h-[360px] object-cover rounded-3xl opacity-40 blur-[2px]"
-            />
-
-            <p className="text-center mt-4 text-white/60">
-              Previous
-            </p>
-          </motion.div>
-
-          {/* Selected */}
-
-          <AnimatePresence mode="wait">
-
-            <motion.div
-              key={current}
-              initial={{
-                opacity: 0,
-                scale: .92,
-              }}
-              animate={{
-                opacity: 1,
-                scale: 1,
-              }}
-              exit={{
-                opacity: 0,
-                scale: .92,
-              }}
-              transition={{
-                duration: .35,
-              }}
-              className="relative"
-            >
-
-              <img
-                src={images[current]}
-                alt="Selected"
-                className="w-[330px] h-[500px] object-cover rounded-[35px] border border-[#C58CFF]/40 shadow-[0_0_45px_rgba(197,140,255,.45)]"
-              />
-
-              <div
-                className="absolute inset-0 rounded-[35px]"
-                style={{
-                  boxShadow:
-                    "0 0 60px rgba(197,140,255,.25)",
-                }}
-              />
-
-            </motion.div>
-
-          </AnimatePresence>
-
-          {/* Next */}
-
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            onClick={next}
-            className="cursor-pointer"
-          >
-            <img
-              src={images[nextIndex]}
-              alt="Next"
-              className="w-56 h-[360px] object-cover rounded-3xl opacity-40 blur-[2px]"
-            />
-
-            <p className="text-center mt-4 text-white/60">
-              Next
-            </p>
-
-          </motion.div>
-
-        </div>
-
-                {/* Friend Name */}
-
-        <motion.h2
-          key={current}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center mt-12 text-4xl text-white font-semibold"
+        <Typography
+          variant="subtitle"
+          align="center"
+          animate
           style={{
-            fontFamily: "'Playfair Display', serif",
-            textShadow: "0 0 20px rgba(197,140,255,.8)",
+            position: "relative",
+            zIndex: 2,
+            maxWidth: 620,
+            margin: "0 auto",
+            lineHeight: 1.8,
+            fontSize: "1.15rem",
           }}
         >
-          {friendName}
-        </motion.h2>
+          This is the beginning of your friendship.
+          <br />
+          Choose the companion who feels right for you.{"\u00A0"}💜
+        </Typography>
 
-        <motion.p
-          key={current + "quote"}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center mt-4 text-white/70 text-lg"
-        >
-          I've been waiting to meet you. 💜
-        </motion.p>
-
-        {/* Indicators */}
-
-        <div className="flex justify-center gap-3 mt-8">
-
-          {images.map((_, index) => (
-
-            <motion.div
-              key={index}
-              animate={{
-                width: current === index ? 28 : 10,
-                opacity: current === index ? 1 : .35,
-              }}
-              className="h-[10px] rounded-full bg-[#C58CFF]"
-            />
-
-          ))}
-
-        </div>
-
-        {/* Center Button */}
-
-        <div className="w-full flex justify-center mt-10">
-
-          <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: .97 }}
-            onClick={handleContinue}
-            className="px-14 py-4 rounded-2xl
-            text-white text-lg font-semibold
-            bg-gradient-to-r
-            from-[#8E63FF]
-            to-[#C58CFF]
-            shadow-[0_0_35px_rgba(157,92,255,.7)]"
-          >
-            Choose {friendName} ❤️
-          </motion.button>
-
-        </div>
-
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: 160 }}
+          transition={{ delay: 0.5, duration: 0.7 }}
+          style={{
+            height: 3,
+            margin: "28px auto 0",
+            borderRadius: 999,
+            background: "linear-gradient(to right,#8B5CF6,#D8B4FE,#8B5CF6)",
+            boxShadow: "0 0 25px rgba(168,85,247,.5)",
+          }}
+        />
       </div>
 
-    </div>
-  );
+      {/* ==========================================
+          Carousel
+      ========================================== */}
 
+      <FriendCarousel
+        images={images}
+        current={current}
+        previous={previous}
+        next={next}
+        friendName={friendName}
+        companionQuotes={companionQuotes}
+        handleContinue={handleContinue}
+      />
+    </AuthLayout>
+  );
 }

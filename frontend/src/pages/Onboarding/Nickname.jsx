@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 import { useOnboarding } from "../../context/OnboardingContext";
 
-import AuthLayout from "../../components/layout/AuthLayout";;
-import bgImg from "../../assets/images/background/bg.png";
+import AuthLayout from "../../components/layout/AuthLayout";
+import Typography from "../../components/ui/Typography";
+import TextField from "../../components/ui/TextField";
+import PrimaryButton from "../../components/ui/PrimaryButton";
 
-import { motion } from "framer-motion";
+import spacing from "../../theme/spacing";
 
 export default function Nickname() {
   const navigate = useNavigate();
@@ -28,29 +31,70 @@ export default function Nickname() {
   };
 
   return (
-    <AuthLayout size="md"
-      step={1}
-      totalSteps={5}
-      title="What should I call you?"
-      subtitle="This is the name I'll use whenever we talk ❤️"
-      bgImage={bgImg}
-    >
+    <AuthLayout size="md">
       {!showReply ? (
         <>
-          <input
+          {/* ===========================
+              Hero Section
+          =========================== */}
+
+          <div
+            style={{
+              marginBottom: spacing.margin.xl,
+            }}
+          >
+            <Typography
+  variant="hero"
+  align="center"
+  animate
+  style={{
+    marginBottom: spacing.margin.md,
+    fontFamily: "'Playfair Display', serif",
+    fontSize: "clamp(28px, 4vw, 40px)",
+    lineHeight: 1.3,
+    textShadow:
+      "0 0 12px rgba(197,140,255,0.85), 0 0 28px rgba(157,92,255,0.6), 0 0 55px rgba(124,92,252,0.45)",
+  }}
+>
+  What should I call you?
+</Typography>
+
+            <Typography
+  variant="subtitle"
+  align="center"
+  animate
+  style={{
+    maxWidth: 480,
+    margin: "0 auto",
+    lineHeight: 1.8,
+  }}
+>
+  This is the name I'll use whenever we talk{"\u00A0"}❤️
+</Typography>
+          </div>
+
+          {/* ===========================
+              Nickname Form
+          =========================== */}
+
+          <TextField
+            label="Nickname"
+            name="nickname"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
             placeholder="Enter your nickname"
-            className="w-full rounded-2xl bg-white/10 border border-white/20 px-6 py-4 text-white outline-none text-lg placeholder:text-white/40 focus:border-[#A96FFF] focus:ring-2 focus:ring-[#A96FFF]/40 transition"
+            autoComplete="off"
+            required
           />
 
-          <button
-            onClick={handleContinue}
-            disabled={!nickname.trim()}
-            className="mt-8 w-full rounded-2xl py-4 text-lg font-semibold text-white bg-gradient-to-r from-[#9A5DFF] to-[#C58CFF] shadow-[0_0_25px_rgba(157,92,255,0.6)] hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Continue →
-          </button>
+          <div style={{ marginTop: spacing.margin.xl }}>
+            <PrimaryButton
+              onClick={handleContinue}
+              disabled={!nickname.trim()}
+            >
+              Continue →
+            </PrimaryButton>
+          </div>
         </>
       ) : (
         <motion.div
@@ -78,11 +122,9 @@ export default function Nickname() {
             />
           </div>
 
-          <motion.h2
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1 }}
-            className="text-3xl text-white font-semibold"
+          <Typography
+            variant="hero"
+            align="center"
             style={{
               fontFamily: "'Playfair Display', serif",
               textShadow:
@@ -90,16 +132,17 @@ export default function Nickname() {
             }}
           >
             Sure, {nickname} ❤️
-          </motion.h2>
+          </Typography>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 2 }}
-            className="mt-5 text-[#D7BEFF]/90 text-lg"
+          <Typography
+            variant="subtitle"
+            align="center"
+            style={{
+              marginTop: spacing.margin.md,
+            }}
           >
             This is how I'll address you every day.
-          </motion.p>
+          </Typography>
         </motion.div>
       )}
     </AuthLayout>

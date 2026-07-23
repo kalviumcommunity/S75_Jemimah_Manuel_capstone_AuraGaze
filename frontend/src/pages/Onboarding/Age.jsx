@@ -2,10 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
-import bgImg from "../../assets/images/background/bg.png";
+import { useOnboarding } from "../../context/OnboardingContext";
 
 import AuthLayout from "../../components/layout/AuthLayout";
-import { useOnboarding } from "../../context/OnboardingContext";
+import Typography from "../../components/ui/Typography";
+import PrimaryButton from "../../components/ui/PrimaryButton";
+
+import spacing from "../../theme/spacing";
 
 export default function Age() {
   const navigate = useNavigate();
@@ -25,30 +28,68 @@ export default function Age() {
   };
 
   return (
-    <AuthLayout
-      step={5}
-      totalSteps={5}
-      title="How old would you like me to be?"
-      subtitle="Choose the age that feels most comfortable to you. 💜"
-      bgImage={bgImg}
-    >
+    <AuthLayout size="md">
       {!showReply ? (
         <>
-          <div className="flex flex-col items-center">
+          {/* ===========================
+              Hero Section
+          =========================== */}
 
-            <motion.h1
-              key={age}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.25 }}
-              className="text-7xl font-bold text-white mb-10"
+          <div
+            style={{
+              marginBottom: spacing.margin.xl,
+            }}
+          >
+            <Typography
+              variant="hero"
+              align="center"
+              animate
               style={{
+                marginBottom: spacing.margin.md,
+                fontFamily: "'Playfair Display', serif",
+                fontSize: "clamp(28px, 4vw, 40px)",
+                lineHeight: 1.3,
                 textShadow:
-                  "0 0 18px rgba(197,140,255,.9),0 0 45px rgba(157,92,255,.55)",
+                  "0 0 12px rgba(197,140,255,0.85), 0 0 28px rgba(157,92,255,0.6), 0 0 55px rgba(124,92,252,0.45)",
               }}
             >
-              {age}
-            </motion.h1>
+              How old would you like me to be?
+            </Typography>
+
+            <Typography
+              variant="subtitle"
+              align="center"
+              animate
+              style={{
+                maxWidth: 480,
+                margin: "0 auto",
+                lineHeight: 1.8,
+              }}
+            >
+              Choose the age that feels most comfortable to you.{"\u00A0"}💜
+            </Typography>
+          </div>
+
+          {/* ===========================
+              Age Slider
+          =========================== */}
+
+          <div className="flex flex-col items-center">
+            <motion.h1
+  key={age}
+  initial={{ scale: 0.8, opacity: 0 }}
+  animate={{ scale: 1, opacity: 1 }}
+  transition={{ duration: 0.25 }}
+  className="text-7xl font-bold text-white"
+  style={{
+    fontFamily: "'Playfair Display', serif",
+    textShadow:
+      "0 0 12px rgba(197,140,255,0.85), 0 0 28px rgba(157,92,255,0.6), 0 0 55px rgba(124,92,252,0.45)",
+    marginBottom: spacing.margin.xl,
+  }}
+>
+  {age}
+</motion.h1>
 
             <input
               type="range"
@@ -63,15 +104,13 @@ export default function Age() {
               <span>6</span>
               <span>70</span>
             </div>
-
           </div>
 
-          <button
-            onClick={handleContinue}
-            className="mt-12 w-full rounded-2xl py-4 text-lg font-semibold text-white bg-gradient-to-r from-[#9A5DFF] to-[#C58CFF] shadow-[0_0_25px_rgba(157,92,255,0.6)] hover:scale-105 transition"
-          >
-            Continue →
-          </button>
+          <div style={{ marginTop: spacing.margin.xl }}>
+            <PrimaryButton onClick={handleContinue}>
+              Continue →
+            </PrimaryButton>
+          </div>
         </>
       ) : (
         <motion.div
@@ -80,54 +119,56 @@ export default function Age() {
           className="text-center"
         >
           <div className="flex justify-center gap-2 mb-6">
-
             <motion.div
               animate={{ y: [0, -8, 0] }}
-              transition={{ repeat: Infinity, duration: .6 }}
+              transition={{ repeat: Infinity, duration: 0.6 }}
               className="w-3 h-3 rounded-full bg-[#CDBBFF]"
             />
 
             <motion.div
               animate={{ y: [0, -8, 0] }}
-              transition={{ repeat: Infinity, duration: .6, delay: .15 }}
+              transition={{ repeat: Infinity, duration: 0.6, delay: 0.15 }}
               className="w-3 h-3 rounded-full bg-[#CDBBFF]"
             />
 
             <motion.div
               animate={{ y: [0, -8, 0] }}
-              transition={{ repeat: Infinity, duration: .6, delay: .3 }}
+              transition={{ repeat: Infinity, duration: 0.6, delay: 0.3 }}
               className="w-3 h-3 rounded-full bg-[#CDBBFF]"
             />
-
           </div>
 
-          <motion.h2
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1 }}
-            className="text-4xl text-white font-semibold"
+          <Typography
+            variant="hero"
+            align="center"
+            style={{
+              fontFamily: "'Playfair Display', serif",
+              textShadow:
+                "0 0 12px rgba(197,140,255,0.85), 0 0 28px rgba(157,92,255,0.6), 0 0 55px rgba(124,92,252,0.45)",
+            }}
           >
             {age}...
-          </motion.h2>
+          </Typography>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 2 }}
-            className="mt-5 text-white/80 text-lg"
+          <Typography
+            variant="subtitle"
+            align="center"
+            style={{
+              marginTop: spacing.margin.md,
+            }}
           >
             Perfect.
-          </motion.p>
+          </Typography>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 2.6 }}
-            className="mt-3 text-white/70 text-lg"
+          <Typography
+            variant="subtitle"
+            align="center"
+            style={{
+              marginTop: spacing.margin.sm,
+            }}
           >
-            I'll always be just the age you imagined me to be. 💜
-          </motion.p>
-
+            I'll always be just the age you imagined me to be.{"\u00A0"}💜
+          </Typography>
         </motion.div>
       )}
     </AuthLayout>

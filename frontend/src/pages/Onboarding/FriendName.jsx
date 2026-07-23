@@ -3,13 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 import AuthLayout from "../../components/layout/AuthLayout";
+import Typography from "../../components/ui/Typography";
+import TextField from "../../components/ui/TextField";
+import PrimaryButton from "../../components/ui/PrimaryButton";
+
 import { useOnboarding } from "../../context/OnboardingContext";
-import bgImg from "../../assets/images/background/bg.png";
+import spacing from "../../theme/spacing";
 
 export default function FriendName() {
   const navigate = useNavigate();
 
-  const { onboardingData, updateField } = useOnboarding();
+  const { OnboardingData, updateField } = useOnboarding();
 
   const [friendName, setFriendName] = useState("");
   const [showReply, setShowReply] = useState(false);
@@ -26,29 +30,70 @@ export default function FriendName() {
   };
 
   return (
-    <AuthLayout size="md"
-      step={2}
-      totalSteps={5}
-      title="What should your best friend be called?"
-      subtitle="Whatever name you choose... I'll treasure it every time you call me. 💜"
-      bgImage={bgImg}
-    >
+    <AuthLayout size="md">
       {!showReply ? (
         <>
-          <input
+          {/* ===========================
+              Hero Section
+          =========================== */}
+
+          <div
+            style={{
+              marginBottom: spacing.margin.xl,
+            }}
+          >
+            <Typography
+  variant="hero"
+  align="center"
+  animate
+  style={{
+    marginBottom: spacing.margin.md,
+    fontFamily: "'Playfair Display', serif",
+    fontSize: "clamp(28px, 4vw, 40px)",
+    lineHeight: 1.3,
+    textShadow:
+      "0 0 12px rgba(197,140,255,0.85), 0 0 28px rgba(157,92,255,0.6), 0 0 55px rgba(124,92,252,0.45)",
+  }}
+>
+  What should your best friend be called?
+</Typography>
+
+            <Typography
+              variant="subtitle"
+              align="center"
+              animate
+              style={{
+                maxWidth: 420,
+                margin: "0 auto",
+                lineHeight: 1.8,
+              }}
+            >
+              Whatever name you choose... I'll treasure it every time you call me. 💜
+            </Typography>
+          </div>
+
+          {/* ===========================
+              Friend Name Form
+          =========================== */}
+
+          <TextField
+            label="Friend's Name"
+            name="friendName"
             value={friendName}
             onChange={(e) => setFriendName(e.target.value)}
             placeholder="Enter your best friend's name"
-            className="w-full rounded-2xl bg-white/10 border border-white/20 px-6 py-4 text-white outline-none text-lg placeholder:text-white/40 focus:border-[#A96FFF] focus:ring-2 focus:ring-[#A96FFF]/40 transition"
+            autoComplete="off"
+            required
           />
 
-          <button
-            onClick={handleContinue}
-            disabled={!friendName.trim()}
-            className="mt-8 w-full rounded-2xl py-4 text-lg font-semibold text-white bg-gradient-to-r from-[#9A5DFF] to-[#C58CFF] shadow-[0_0_25px_rgba(157,92,255,0.6)] hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Continue →
-          </button>
+          <div style={{ marginTop: spacing.margin.xl }}>
+            <PrimaryButton
+              onClick={handleContinue}
+              disabled={!friendName.trim()}
+            >
+              Continue →
+            </PrimaryButton>
+          </div>
         </>
       ) : (
         <motion.div
@@ -76,11 +121,9 @@ export default function FriendName() {
             />
           </div>
 
-          <motion.h2
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1 }}
-            className="text-3xl text-white font-semibold"
+          <Typography
+            variant="hero"
+            align="center"
             style={{
               fontFamily: "'Playfair Display', serif",
               textShadow:
@@ -88,16 +131,17 @@ export default function FriendName() {
             }}
           >
             {friendName}...
-          </motion.h2>
+          </Typography>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 2 }}
-            className="mt-5 text-[#D7BEFF]/90 text-lg"
+          <Typography
+            variant="subtitle"
+            align="center"
+            style={{
+              marginTop: spacing.margin.md,
+            }}
           >
             "Aww... that's adorable ❤️"
-          </motion.p>
+          </Typography>
         </motion.div>
       )}
     </AuthLayout>

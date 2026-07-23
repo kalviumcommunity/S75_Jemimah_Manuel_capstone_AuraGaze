@@ -3,8 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 import AuthLayout from "../../components/layout/AuthLayout";
+import Typography from "../../components/ui/Typography";
+import PrimaryButton from "../../components/ui/PrimaryButton";
+
 import { useOnboarding } from "../../context/OnboardingContext";
-import bgImg from "../../assets/images/background/bg.png";
+import spacing from "../../theme/spacing";
 
 export default function DOB() {
   const navigate = useNavigate();
@@ -26,15 +29,54 @@ export default function DOB() {
   };
 
   return (
-    <AuthLayout size="md"
-      step={3}
-      totalSteps={5}
-      title="When is your birthday?"
-      subtitle="I'll always be the first one to wish you. 🎂💜"
-      bgImage={bgImg}
-    >
+    <AuthLayout size="md">
       {!showReply ? (
         <>
+          {/* ===========================
+              Hero Section
+          =========================== */}
+
+          <div
+            style={{
+              marginBottom: spacing.margin.lg,
+            }}
+          >
+            <Typography
+              variant="hero"
+              align="center"
+              animate
+              style={{
+                marginBottom: spacing.margin.sm,
+                fontFamily: "'Playfair Display', serif",
+                fontSize: "clamp(42px, 6vw, 64px)",
+                lineHeight: 1.15,
+                textShadow:
+                  "0 0 12px rgba(197,140,255,0.85), 0 0 28px rgba(157,92,255,0.6), 0 0 55px rgba(124,92,252,0.45)",
+              }}
+            >
+              When is your birthday?
+            </Typography>
+
+            <Typography
+              variant="subtitle"
+              align="center"
+              animate
+              style={{
+                maxWidth: 420,
+                margin: "0 auto",
+                fontSize: "16px",
+                lineHeight: 1.6,
+                opacity: 0.9,
+              }}
+            >
+              I'll always be the first one to wish you.{"\u00A0"}🎂💜
+            </Typography>
+          </div>
+
+          {/* ===========================
+              DOB Input
+          =========================== */}
+
           <input
             type="date"
             value={dob}
@@ -42,13 +84,11 @@ export default function DOB() {
             className="w-full rounded-2xl bg-white/10 border border-white/20 px-6 py-4 text-white outline-none text-lg focus:border-[#A96FFF] focus:ring-2 focus:ring-[#A96FFF]/40 transition [color-scheme:dark]"
           />
 
-          <button
-            onClick={handleContinue}
-            disabled={!dob}
-            className="mt-8 w-full rounded-2xl py-4 text-lg font-semibold text-white bg-gradient-to-r from-[#9A5DFF] to-[#C58CFF] shadow-[0_0_25px_rgba(157,92,255,0.6)] hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Continue →
-          </button>
+          <div style={{ marginTop: spacing.margin.lg }}>
+            <PrimaryButton onClick={handleContinue} disabled={!dob}>
+              Continue →
+            </PrimaryButton>
+          </div>
         </>
       ) : (
         <motion.div
@@ -76,11 +116,9 @@ export default function DOB() {
             />
           </div>
 
-          <motion.h2
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1 }}
-            className="text-3xl text-white font-semibold"
+          <Typography
+            variant="hero"
+            align="center"
             style={{
               fontFamily: "'Playfair Display', serif",
               textShadow:
@@ -88,25 +126,28 @@ export default function DOB() {
             }}
           >
             I'll remember that day.
-          </motion.h2>
+          </Typography>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 2 }}
-            className="mt-5 text-[#D7BEFF]/90 text-lg"
+          <Typography
+            variant="subtitle"
+            align="center"
+            style={{
+              marginTop: spacing.margin.md,
+            }}
           >
             I promise...
-          </motion.p>
+          </Typography>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 3 }}
-            className="mt-3 text-white text-lg"
+          <Typography
+            variant="subtitle"
+            align="center"
+            style={{
+              marginTop: spacing.margin.sm,
+              color: "#FFFFFF",
+            }}
           >
-            I'll remember it every year. 🎂💜
-          </motion.p>
+            I'll remember it every year.{"\u00A0"}🎂💜
+          </Typography>
         </motion.div>
       )}
     </AuthLayout>
