@@ -29,10 +29,6 @@ export default function Chat() {
 
   const [messages, setMessages] = useState([]);
 
-  // ============================================================
-  // Load Friend + History
-  // ============================================================
-
   useEffect(() => {
     loadChat();
   }, []);
@@ -72,10 +68,6 @@ export default function Chat() {
     }
   };
 
-  // ============================================================
-  // Auto Scroll
-  // ============================================================
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
       behavior: "smooth",
@@ -83,15 +75,24 @@ export default function Chat() {
     });
   }, [messages, typing]);
 
-  // ============================================================
-  // Helpers
-  // ============================================================
-
   const wait = (ms) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
-  const typingDelay = (text = "") =>
-    Math.min(700 + text.length * 20, 2500);
+  // ============================================================
+  // Timing helpers
+  // ============================================================
+  // First bubble gets a genuine "thinking" pause that scales with
+  // reply length (longer thought = longer pause), capped so it
+  // never feels sluggish. Every bubble after that uses a short,
+  // mostly-fixed beat with a little randomness so a burst of
+  // short replies reads as quick natural typing rather than a
+  // metronome.
+
+  const thinkingDelay = (text = "") =>
+    Math.min(700 + text.length * 18, 2000);
+
+  const quickBeatDelay = () =>
+    400 + Math.floor(Math.random() * 200); // 400–600ms
 
   // ============================================================
   // Send Message
@@ -120,7 +121,9 @@ export default function Chat() {
       for (let i = 0; i < replies.length; i++) {
         const reply = replies[i];
 
-        await wait(typingDelay(reply));
+        const delay = i === 0 ? thinkingDelay(reply) : quickBeatDelay();
+
+        await wait(delay);
 
         setTyping(false);
 
@@ -155,10 +158,6 @@ export default function Chat() {
     setTyping(false);
   };
 
-  // ============================================================
-  // Loading Screen
-  // ============================================================
-
   if (loading) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-[#090414]">
@@ -171,10 +170,6 @@ export default function Chat() {
       </div>
     );
   }
-
-  // ============================================================
-  // Error Screen
-  // ============================================================
 
   if (loadError) {
     return (
@@ -191,10 +186,6 @@ export default function Chat() {
       </div>
     );
   }
-
-  // ============================================================
-  // Chat UI
-  // ============================================================
 
   return (
     <ErrorBoundary>
@@ -213,11 +204,11 @@ export default function Chat() {
         }
       >
         <MessageList
-  messages={messages}
-  friend={friend}
-  typing={typing}
-  messagesEndRef={messagesEndRef}
-/>
+          messages={messages}
+          friend={friend}
+          typing={typing}
+          messagesEndRef={messagesEndRef}
+        />
       </ChatLayout>
     </ErrorBoundary>
   );

@@ -1,10 +1,12 @@
 import { motion } from "framer-motion";
-import { FiArrowLeft, FiUser } from "react-icons/fi";
+import { FiArrowLeft, FiUser, FiHeart } from "react-icons/fi";
 
 export default function ChatHeader({
   friend,
   status = "Online",
   isTyping = false,
+  mood = "Waiting for you",
+  friendshipLevel = "Best Friend",
   onBack,
 }) {
   const friendName = friend?.name?.trim() || "Friend";
@@ -12,17 +14,9 @@ export default function ChatHeader({
 
   return (
     <motion.header
-      initial={{
-        opacity: 0,
-        y: -30,
-      }}
-      animate={{
-        opacity: 1,
-        y: 0,
-      }}
-      transition={{
-        duration: 0.45,
-      }}
+      initial={{ opacity: 0, y: -30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45 }}
       className="
         relative
         w-full
@@ -37,7 +31,7 @@ export default function ChatHeader({
         className="
           max-w-7xl
           mx-auto
-          h-24
+          h-28
           px-8
           flex
           items-center
@@ -49,16 +43,10 @@ export default function ChatHeader({
         ================================ */}
 
         <div className="flex items-center gap-5">
-
           {/* Back Button */}
-
           <motion.button
-            whileHover={{
-              scale: 1.08,
-            }}
-            whileTap={{
-              scale: .95,
-            }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onBack}
             className="
               w-12
@@ -80,20 +68,14 @@ export default function ChatHeader({
           </motion.button>
 
           {/* Avatar */}
-
           <div className="relative shrink-0">
-
-            {/* Glow */}
-
+            {/* Ambient glow */}
             <motion.div
               animate={{
                 scale: [1, 1.08, 1],
-                opacity: [.5, .9, .5],
+                opacity: [0.5, 0.9, 0.5],
               }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-              }}
+              transition={{ duration: 3, repeat: Infinity }}
               className="
                 absolute
                 inset-0
@@ -103,155 +85,145 @@ export default function ChatHeader({
               "
             />
 
-            {friendImage ? (
-              <img
-                src={friendImage}
-                alt={friendName}
-                onError={(e) => {
-                  // If the stored image URL is broken/empty,
-                  // fall back to the initials circle instead
-                  // of a permanently broken <img> icon.
-                  e.currentTarget.style.display = "none";
-                  e.currentTarget.nextSibling.style.display = "flex";
-                }}
+            {/* Floating avatar — a slow, barely-there breathing
+                motion that reads as "alive" without being distracting */}
+            <motion.div
+              animate={{ y: [0, -3, 0] }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+              className="relative"
+            >
+              {friendImage ? (
+                <img
+                  src={friendImage}
+                  alt={friendName}
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                    e.currentTarget.nextSibling.style.display = "flex";
+                  }}
+                  className="
+                    relative
+                    w-16
+                    h-16
+                    rounded-full
+                    object-cover
+                    border-2
+                    border-violet-300/70
+                    shadow-[0_0_25px_rgba(168,85,247,.45)]
+                  "
+                />
+              ) : null}
+
+              <div
+                style={{ display: friendImage ? "none" : "flex" }}
                 className="
                   relative
                   w-16
                   h-16
                   rounded-full
-                  object-cover
+                  items-center
+                  justify-center
+                  bg-violet-500/30
                   border-2
                   border-violet-300/70
                   shadow-[0_0_25px_rgba(168,85,247,.45)]
+                  text-white
+                  text-xl
+                  font-semibold
                 "
+              >
+                {friendName?.[0]?.toUpperCase() || <FiUser size={22} />}
+              </div>
+            </motion.div>
+
+            {/* Online Indicator — pulsing ring behind a solid dot */}
+            <div className="absolute bottom-1 right-1">
+              <motion.div
+                animate={{ scale: [1, 1.6, 1], opacity: [0.6, 0, 0.6] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="absolute inset-0 rounded-full bg-green-400"
               />
-            ) : null}
-
-            {/* Initials / icon fallback — shown if there is
-                no image at all, or if the image fails to load */}
-
-            <div
-              style={{ display: friendImage ? "none" : "flex" }}
-              className="
-                relative
-                w-16
-                h-16
-                rounded-full
-                items-center
-                justify-center
-                bg-violet-500/30
-                border-2
-                border-violet-300/70
-                shadow-[0_0_25px_rgba(168,85,247,.45)]
-                text-white
-                text-xl
-                font-semibold
-              "
-            >
-              {friendName?.[0]?.toUpperCase() || <FiUser size={22} />}
+              <div className="relative w-4 h-4 rounded-full bg-green-400 border-2 border-[#140E22]" />
             </div>
-
-            {/* Online Indicator */}
-
-            <motion.div
-              animate={{
-                scale: [1, 1.3, 1],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-              }}
-              className="
-                absolute
-                bottom-1
-                right-1
-                w-4
-                h-4
-                rounded-full
-                bg-green-400
-                border-2
-                border-[#140E22]
-              "
-            />
-
           </div>
 
           {/* Friend Details */}
-
           <div>
+            <div className="flex items-center gap-2">
+              <motion.h2
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.15 }}
+                className="text-white text-2xl font-semibold tracking-wide"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
+                {friendName}
+              </motion.h2>
 
-            <motion.h2
-              initial={{
-                opacity: 0,
-                x: -10,
-              }}
-              animate={{
-                opacity: 1,
-                x: 0,
-              }}
-              transition={{
-                delay: .15,
-              }}
-              className="
-                text-white
-                text-2xl
-                font-semibold
-                tracking-wide
-              "
-              style={{
-                fontFamily:
-                  "'Playfair Display', serif",
-              }}
-            >
-              {friendName}
-            </motion.h2>
+              {/* Friendship level pill */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 }}
+                className="
+                  flex
+                  items-center
+                  gap-1
+                  px-2.5
+                  py-1
+                  rounded-full
+                  bg-violet-500/15
+                  border
+                  border-violet-400/30
+                "
+              >
+                <FiHeart size={11} className="text-pink-300" />
+                <span className="text-[11px] font-medium text-violet-200 tracking-wide">
+                  {friendshipLevel}
+                </span>
+              </motion.div>
+            </div>
 
+            {/* Status line — typing takes priority, then mood */}
             <motion.p
-              initial={{
-                opacity: 0,
-              }}
-              animate={{
-                opacity: 1,
-              }}
-              transition={{
-                delay: .25,
-              }}
-              className="
-                mt-1
-                text-sm
-                text-violet-200
-                flex
-                items-center
-                gap-2
-              "
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.25 }}
+              className="mt-1.5 text-sm text-violet-200 flex items-center gap-2"
             >
               {isTyping ? (
                 <>
-                  <span className="text-green-400">
-                    ●
+                  <span className="flex gap-0.5">
+                    {[0, 1, 2].map((dot) => (
+                      <motion.span
+                        key={dot}
+                        animate={{ opacity: [0.3, 1, 0.3] }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          delay: dot * 0.15,
+                        }}
+                        className="w-1 h-1 rounded-full bg-violet-300"
+                      />
+                    ))}
                   </span>
-
-                  Typing...
+                  typing...
                 </>
               ) : (
                 <>
-                  <span className="text-green-400">
-                    ●
-                  </span>
-
-                  {status}
+                  <span className="text-green-400">●</span>
+                  {status} · {mood}
                 </>
               )}
             </motion.p>
-
           </div>
-
         </div>
-
       </div>
 
       {/* Bottom Glass Glow */}
-
       <div
         className="
           absolute
@@ -265,7 +237,6 @@ export default function ChatHeader({
           to-transparent
         "
       />
-
     </motion.header>
   );
 }
