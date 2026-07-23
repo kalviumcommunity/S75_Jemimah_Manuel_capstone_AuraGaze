@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import axios from "axios";
 
-import bgImg from "../assets/images/background/bg.png";
+import AuthLayout from "../components/layout/AuthLayout";
+import Typography from "../components/ui/Typography";
+import TextField from "../components/ui/TextField";
+import PrimaryButton from "../components/ui/PrimaryButton";
+
+import spacing from "../theme/spacing";
 
 const backendURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -44,12 +48,11 @@ export default function Login() {
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("username", response.data.username);
 
-    // Go to Chat only if onboarding is completed
-    if (response.data.profileCompleted) {
-    navigate("/chat");
-    } else {
-    navigate("/nickname");
-    }
+      if (response.data.profileCompleted) {
+        navigate("/chat");
+      } else {
+        navigate("/nickname");
+      }
     } catch (error) {
       setError(error.response?.data?.message || "Login failed");
     } finally {
@@ -58,120 +61,110 @@ export default function Login() {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center bg-[#090413] px-5 py-10">
+    <AuthLayout size="md">
+      {/* ===========================
+          Hero Section
+      =========================== */}
 
-      {/* Background */}
       <div
-        className="absolute inset-0"
         style={{
-          backgroundImage: `url(${bgImg})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
+          marginBottom: spacing.margin.xl,
         }}
-      />
-
-      {/* Dark Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/55" />
-
-      {/* Purple Glow */}
-      <div className="absolute w-[900px] h-[900px] rounded-full bg-[#8B5CFF]/20 blur-[220px] pointer-events-none" />
-
-      {/* Glass Card */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 30 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="relative z-10 w-full max-w-md rounded-[32px] border border-white/15 bg-white/[0.08] backdrop-blur-[35px] shadow-[0_30px_120px_rgba(0,0,0,0.55)] px-8 py-10 sm:px-12 sm:py-14"
       >
-
-        {/* Heading */}
-        <motion.h1
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.15 }}
-          className="text-center text-white text-4xl sm:text-5xl"
+        <Typography
+          variant="hero"
+          align="center"
+          animate
           style={{
+            marginBottom: spacing.margin.md,
             fontFamily: "'Playfair Display', serif",
             textShadow:
               "0 0 12px rgba(197,140,255,0.85), 0 0 28px rgba(157,92,255,0.6), 0 0 55px rgba(124,92,252,0.45)",
           }}
         >
           Welcome Back
-        </motion.h1>
+        </Typography>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="mt-4 mb-9 text-center text-[#D8C8FF] text-base sm:text-lg leading-7"
+        <Typography
+          variant="subtitle"
+          align="center"
+          animate
+          style={{
+            maxWidth: 420,
+            margin: "0 auto",
+            lineHeight: 1.8,
+          }}
         >
           Your best friend has been waiting.
           <br />
           Login and continue your journey 💜
-        </motion.p>
+        </Typography>
+      </div>
 
-        {error && (
-          <div className="mb-5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-300 text-center py-3">
-            {error}
-          </div>
-        )}
+      {/* ===========================
+          Error Message
+      =========================== */}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <div
+          style={{
+            marginBottom: spacing.margin.lg,
+            padding: "14px 18px",
+            borderRadius: 18,
+            background: "rgba(239,68,68,.12)",
+            border: "1px solid rgba(239,68,68,.30)",
+            color: "#FCA5A5",
+            textAlign: "center",
+            fontWeight: 500,
+          }}
+        >
+          {error}
+        </div>
+      )}
 
-          {/* Email */}
-          <div>
-            <label className="text-[#D7BEFF]/80 text-sm">Email</label>
+      {/* ===========================
+          Login Form
+      =========================== */}
 
-            <input
-              type="email"
-              name="email"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={handleChange}
-              className="mt-2 w-full rounded-2xl bg-white/10 border border-white/20 px-5 py-4 text-white placeholder:text-white/40 outline-none focus:border-[#A96FFF] focus:ring-2 focus:ring-[#A96FFF]/40 transition"
-            />
-          </div>
+      <form onSubmit={handleSubmit}>
+        <TextField
+          label="Email"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleChange}
+          placeholder="Enter your email"
+          autoComplete="email"
+          required
+        />
 
-          {/* Password */}
-          <div>
-            <label className="text-[#D7BEFF]/80 text-sm">Password</label>
+        <TextField
+          label="Password"
+          name="password"
+          type="password"
+          value={formData.password}
+          onChange={handleChange}
+          placeholder="Enter your password"
+          autoComplete="current-password"
+          required
+        />
 
-            <input
-              type="password"
-              name="password"
-              placeholder="Enter your password"
-              value={formData.password}
-              onChange={handleChange}
-              className="mt-2 w-full rounded-2xl bg-white/10 border border-white/20 px-5 py-4 text-white placeholder:text-white/40 outline-none focus:border-[#A96FFF] focus:ring-2 focus:ring-[#A96FFF]/40 transition"
-            />
-          </div>
-
-          {/* Forgot Password */}
-          <div className="flex justify-end">
-            <button
-              type="button"
-              className="text-white/60 hover:text-white transition text-sm"
-            >
-              Forgot Password?
-            </button>
-          </div>
-
-          {/* Login Button */}
-          <motion.button
-            whileHover={{ scale: 1.03, boxShadow: "0 0 45px rgba(180,120,255,0.55)" }}
-            whileTap={{ scale: 0.98 }}
-            type="submit"
-            disabled={loading}
-            className="block w-full py-4 rounded-2xl bg-gradient-to-r from-[#8F5BFF] via-[#A96FFF] to-[#C58CFF] text-white text-lg sm:text-xl font-semibold shadow-[0_12px_35px_rgba(157,92,255,0.45)] transition-all duration-300 disabled:opacity-50"
+        <div
+          className="flex justify-end"
+          style={{ marginBottom: spacing.margin.lg }}
+        >
+          <button
+            type="button"
+            className="text-white/60 hover:text-white transition text-sm"
           >
-            {loading ? "Logging in..." : "Continue"}
-          </motion.button>
+            Forgot Password?
+          </button>
+        </div>
 
-        </form>
-
-      </motion.div>
-
-    </div>
+        <PrimaryButton type="submit" loading={loading}>
+          {loading ? "Logging in..." : "Continue"}
+        </PrimaryButton>
+      </form>
+    </AuthLayout>
   );
 }

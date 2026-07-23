@@ -200,51 +200,46 @@ export default function TextField({
             }}
           />
 
-          {/* ===============================
-              Floating Label
-          =============================== */}
+         {/* ===============================
+    Floating Label
+=============================== */}
 
-          <motion.label
-            animate={{
-              y: isFloating ? -15 : 0,
+<motion.label
+  animate={{
+    y: isFloating ? -34 : 0,
+    scale: isFloating ? 0.85 : 1,
+    color: error
+      ? "#EF4444"
+      : focused
+      ? colors.brand.primary
+      : colors.text.soft,
+  }}
+  transition={{
+    duration: animations.duration.fast,
+  }}
+  className="
+    absolute
+    top-0
+    bottom-0
+    flex
+    items-center
+    pointer-events-none
+    origin-left
+  "
+  style={{
+    left: leftIcon ? 56 : 20,
 
-              scale: isFloating ? 0.88 : 1,
+    fontFamily: typography.fontFamily.body,
+    fontWeight: typography.fontWeight.medium,
+    fontSize: typography.fontSize.base,
 
-              color: error
-                ? "#EF4444"
-                : focused
-                ? colors.brand.primary
-                : colors.text.soft,
-            }}
-            transition={{
-              duration: animations.duration.fast,
-            }}
-            className="
-              absolute
-              left-0
-              pointer-events-none
-              origin-left
-            "
-            style={{
-              left: leftIcon ? 56 : 20,
+    background: "transparent",
 
-              fontFamily:
-                typography.fontFamily.body,
-
-              fontWeight:
-                typography.fontWeight.medium,
-
-              fontSize:
-                typography.fontSize.base,
-
-              paddingInline: "4px",
-
-             background: "transparent",
-            }}
-          >
-            {label}
-          </motion.label>
-
+    zIndex: 2,
+  }}
+>
+  {label}
+</motion.label>
           {/* ===============================
               Password Toggle
           =============================== */}

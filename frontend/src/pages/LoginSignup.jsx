@@ -15,11 +15,6 @@ export default function LoginSignup() {
 
   return (
     <AuthLayout size="md">
-
-      {/* ===========================================
-          Hero Section
-      =========================================== */}
-
       <motion.div
         initial={animations.fadeUp.hidden}
         animate={animations.fadeUp.visible}
@@ -30,11 +25,6 @@ export default function LoginSignup() {
           textAlign: "center",
         }}
       >
-
-        {/* ======================================
-            Brand
-        ====================================== */}
-
         <motion.div
           animate={{
             y: [0, -4, 0],
@@ -69,6 +59,9 @@ export default function LoginSignup() {
           animate
           style={{
             marginBottom: spacing.margin.md,
+            fontFamily: "'Playfair Display', serif",
+            textShadow:
+              "0 0 12px rgba(197,140,255,0.85), 0 0 28px rgba(157,92,255,0.6), 0 0 55px rgba(124,92,252,0.45)",
           }}
         >
           Welcome
@@ -96,28 +89,16 @@ export default function LoginSignup() {
         >
           Your AI companion is waiting 💜
         </Typography>
-
       </motion.div>
-
-      {/* ===========================================
-          Buttons
-      =========================================== */}
 
       <div
         style={{
           marginTop: spacing.margin.hero,
         }}
       >
-                <PrimaryButton
-          size="lg"
-          onClick={() => navigate("/login")}
-        >
+        <PrimaryButton size="lg" onClick={() => navigate("/login")}>
           Continue with Login
         </PrimaryButton>
-
-        {/* ======================================
-            Divider
-        ====================================== */}
 
         <div
           style={{
@@ -158,15 +139,10 @@ export default function LoginSignup() {
           />
         </div>
 
-        <SecondaryButton
-          size="lg"
-          variant="glass"
-          onClick={() => navigate("/signup")}
-        >
+        <SecondaryButton size="lg" variant="glass" onClick={() => navigate("/signup")}>
           Begin a New Friendship
         </SecondaryButton>
       </div>
-
     </AuthLayout>
   );
 }

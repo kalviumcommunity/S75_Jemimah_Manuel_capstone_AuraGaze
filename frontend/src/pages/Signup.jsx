@@ -23,7 +23,6 @@ export default function Signup() {
   });
 
   const [error, setError] = useState("");
-
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -45,24 +44,14 @@ export default function Signup() {
     setError("");
 
     try {
-      const response = await axios.post(
-        `${backendURL}/auth/signup`,
-        formData
-      );
+      const response = await axios.post(`${backendURL}/auth/signup`, formData);
 
       localStorage.setItem("token", response.data.token);
-
-      localStorage.setItem(
-        "username",
-        response.data.username
-      );
+      localStorage.setItem("username", response.data.username);
 
       navigate("/nickname");
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Signup failed. Please try again."
-      );
+      setError(err.response?.data?.message || "Signup failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -80,58 +69,15 @@ export default function Signup() {
           marginBottom: spacing.margin.xl,
         }}
       >
-        {/* Glow Behind Title */}
-
-        <div
-          style={{
-            position: "absolute",
-
-            left: "50%",
-            top: "8px",
-
-            transform: "translateX(-50%)",
-
-            width: 380,
-            height: 150,
-
-            borderRadius: "50%",
-
-            background:
-              "radial-gradient(circle, rgba(168,85,247,.30) 0%, rgba(168,85,247,.16) 45%, transparent 80%)",
-
-            filter: "blur(48px)",
-
-            pointerEvents: "none",
-
-            zIndex: 0,
-          }}
-        />
-
         <Typography
           variant="hero"
           align="center"
           animate
           style={{
-            position: "relative",
-
-            zIndex: 2,
-
             marginBottom: spacing.margin.md,
-
-            background:
-              "linear-gradient(180deg,#FFFFFF 0%,#FFFFFF 28%,#F7F0FF 60%,#E4D2FF 100%)",
-
-            WebkitBackgroundClip: "text",
-
-            WebkitTextFillColor: "transparent",
-
-            textShadow: `
-              0 0 8px rgba(255,255,255,.90),
-              0 0 18px rgba(255,255,255,.75),
-              0 0 36px rgba(168,85,247,.55),
-              0 0 72px rgba(139,92,246,.40),
-              0 0 120px rgba(168,85,247,.22)
-            `,
+            fontFamily: "'Playfair Display', serif",
+            textShadow:
+              "0 0 12px rgba(197,140,255,0.85), 0 0 28px rgba(157,92,255,0.6), 0 0 55px rgba(124,92,252,0.45)",
           }}
         >
           Create Account
@@ -142,14 +88,8 @@ export default function Signup() {
           align="center"
           animate
           style={{
-            position: "relative",
-
-            zIndex: 2,
-
             maxWidth: 420,
-
             margin: "0 auto",
-
             lineHeight: 1.8,
           }}
         >
@@ -169,15 +109,10 @@ export default function Signup() {
             marginBottom: spacing.margin.lg,
             padding: "14px 18px",
             borderRadius: 18,
-
             background: "rgba(239,68,68,.12)",
-
             border: "1px solid rgba(239,68,68,.30)",
-
             color: "#FCA5A5",
-
             textAlign: "center",
-
             fontWeight: 500,
           }}
         >
@@ -190,10 +125,6 @@ export default function Signup() {
       =========================== */}
 
       <form onSubmit={handleSubmit}>
-        {/* ===========================
-            Email
-        =========================== */}
-
         <TextField
           label="Email"
           name="email"
@@ -205,10 +136,6 @@ export default function Signup() {
           required
         />
 
-        {/* ===========================
-            Username
-        =========================== */}
-
         <TextField
           label="Username"
           name="username"
@@ -218,10 +145,6 @@ export default function Signup() {
           autoComplete="username"
           required
         />
-
-        {/* ===========================
-            Password
-        =========================== */}
 
         <TextField
           label="Password"
@@ -234,10 +157,6 @@ export default function Signup() {
           required
         />
 
-        {/* ===========================
-            Confirm Password
-        =========================== */}
-
         <TextField
           label="Confirm Password"
           name="confirmPassword"
@@ -247,31 +166,14 @@ export default function Signup() {
           placeholder="Retype your password"
           autoComplete="new-password"
           required
-          error={
-            error === "Passwords do not match."
-              ? error
-              : undefined
-          }
+          error={error === "Passwords do not match." ? error : undefined}
         />
 
-        <div
-          style={{
-            marginTop: spacing.margin.xl,
-          }}
-        >
-          <PrimaryButton
-            type="submit"
-            loading={loading}
-          >
-            {loading
-              ? "Creating Account..."
-              : "Create Account"}
+        <div style={{ marginTop: spacing.margin.xl }}>
+          <PrimaryButton type="submit" loading={loading}>
+            {loading ? "Creating Account..." : "Create Account"}
           </PrimaryButton>
         </div>
-
-        {/* ===========================
-            Divider
-        =========================== */}
 
         <div
           className="flex items-center"
@@ -281,40 +183,16 @@ export default function Signup() {
             gap: spacing.margin.md,
           }}
         >
-          <div
-            style={{
-              flex: 1,
-              height: 1,
-              background: "rgba(255,255,255,.12)",
-            }}
-          />
+          <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,.12)" }} />
 
-          <Typography
-            variant="caption"
-            style={{
-              letterSpacing: "4px",
-            }}
-          >
+          <Typography variant="caption" style={{ letterSpacing: "4px" }}>
             OR
           </Typography>
 
-          <div
-            style={{
-              flex: 1,
-              height: 1,
-              background: "rgba(255,255,255,.12)",
-            }}
-          />
+          <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,.12)" }} />
         </div>
 
-        {/* ===========================
-            Login Button
-        =========================== */}
-
-        <SecondaryButton
-          type="button"
-          onClick={() => navigate("/login")}
-        >
+        <SecondaryButton type="button" onClick={() => navigate("/login")}>
           Already have an account?
         </SecondaryButton>
       </form>
