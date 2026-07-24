@@ -1,7 +1,7 @@
 const Chat = require("../models/Chat");
 const User = require("../models/user");
 
-const { generateReply } = require("../services/aiService");
+const { generateReply, FALLBACK_REPLY } = require("../services/aiService");
 const runScheduler = require("../services/scheduler");
 const sendFirstMessageIfNeeded = require("../services/scheduler/firstMessage");
 
@@ -67,8 +67,7 @@ const sendMessage = async (req, res) => {
 
     const relationship = await getRelationship(userId);
 
-    const conversationState =
-      detectConversationState(userMessage);
+    const conversationState = detectConversationState(userMessage);
 
     const aiReply = await generateReply({
       userMessage,
@@ -79,17 +78,16 @@ const sendMessage = async (req, res) => {
       conversationState,
     });
 
+    const replyFailed = aiReply === FALLBACK_REPLY;
     const aiReplies = composeMessages(aiReply);
 
     for (const reply of aiReplies) {
-
       await Chat.create({
         user: userId,
         sender: "ai",
         message: reply,
         messageType: "CHAT",
       });
-
     }
 
     chatHistory = await Chat.find({
@@ -98,16 +96,20 @@ const sendMessage = async (req, res) => {
       createdAt: 1,
     });
 
-    const extractionResult =
-      await extractMemory({
+    // Only spend a second Gemini call on memory extraction if the
+    // first call actually succeeded — no point burning quota
+    // extracting "memory" from a conversation that never happened.
+    if (!replyFailed) {
+      const extractionResult = await extractMemory({
         userMessage,
         chatHistory,
       });
 
-    await processMemory({
-      user: userId,
-      extractionResult,
-    });
+      await processMemory({
+        user: userId,
+        extractionResult,
+      });
+    }
 
     await updateRelationship({
       user: userId,
@@ -120,13 +122,10 @@ const sendMessage = async (req, res) => {
     });
 
   } catch (error) {
-
     console.error(error);
-
     res.status(500).json({
       message: "Unable to generate reply.",
     });
-
   }
 };
 
@@ -184,13 +183,10 @@ const getMessages = async (req, res) => {
     res.status(200).json(chatHistory);
 
   } catch (error) {
-
     console.error(error);
-
     res.status(500).json({
       message: "Unable to fetch messages.",
     });
-
   }
 };
 
@@ -200,7 +196,6 @@ const getMessages = async (req, res) => {
 
 const getFriend = async (req, res) => {
   try {
-
     const user = await User.findById(req.user.userId);
 
     if (!user) {
@@ -215,13 +210,10 @@ const getFriend = async (req, res) => {
     });
 
   } catch (error) {
-
     console.error(error);
-
     res.status(500).json({
       message: "Unable to fetch friend.",
     });
-
   }
 };
 

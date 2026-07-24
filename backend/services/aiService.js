@@ -2,18 +2,15 @@ const { getGeminiClient } = require("../config/gemini");
 const { buildSystemPrompt } = require("../personality/personality");
 const { getPromptStrategy } = require("./promptStrategy");
 
+const FALLBACK_REPLY = "wait what 😭 say that again";
+
 // ==========================================
 // Build Relationship Context
 // ==========================================
 
 function buildRelationshipContext(relationship = {}) {
-
   if (!relationship) {
-
-    return `
-No relationship data available yet.
-`;
-
+    return `\nNo relationship data available yet.\n`;
   }
 
   return `
@@ -76,7 +73,6 @@ ${
     : "None yet."
 }
 `;
-
 }
 
 // ==========================================
@@ -89,7 +85,6 @@ function buildContext({
   memories = [],
   relationship = {},
 }) {
-
   const profileContext = `
 ==================================================
 USER PROFILE
@@ -153,7 +148,6 @@ RECENT CONVERSATION
 
 ${conversationContext}
 `;
-
 }
 
 // ==========================================
@@ -344,7 +338,7 @@ The user should completely feel like they're chatting with their best friend.
   } catch (error) {
     console.error("Generate Reply Error (both attempts failed):", error);
 
-    return "wait what 😭 say that again";
+    return FALLBACK_REPLY;
   }
 }
 
@@ -359,7 +353,6 @@ async function generateEventMessage({
   memories = [],
 }) {
   try {
-
     const context = buildContext({
       userProfile,
       chatHistory: [],
@@ -493,7 +486,6 @@ Only return the message.
     return text.trim();
 
   } catch (error) {
-
     console.error("Generate Event Message Error:", error);
 
     return event === "FIRST_MESSAGE"
@@ -501,7 +493,6 @@ Only return the message.
       : event === "STORY_STARTER"
       ? "random thought 😂 <msg> what's one thing that made you smile today?"
       : "Hey 😊 Just wanted to check in and say I'm thinking about you today.";
-
   }
 }
 
@@ -510,4 +501,5 @@ module.exports = {
   generateEventMessage,
   buildContext,
   buildRelationshipContext,
+  FALLBACK_REPLY,
 };
