@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
-import { FiArrowLeft, FiUser, FiHeart } from "react-icons/fi";
+import { FiArrowLeft, FiHeart } from "react-icons/fi";
+
+import Avatar from "../ui/Avatar";
 
 export default function ChatHeader({
   friend,
@@ -8,6 +10,7 @@ export default function ChatHeader({
   mood = "Waiting for you",
   friendshipLevel = "Best Friend",
   onBack,
+  onAvatarClick,
 }) {
   const friendName = friend?.name?.trim() || "Friend";
   const friendImage = friend?.image?.trim() || "";
@@ -67,88 +70,19 @@ export default function ChatHeader({
             <FiArrowLeft size={22} />
           </motion.button>
 
-          {/* Avatar */}
-          <div className="relative shrink-0">
-            {/* Ambient glow */}
-            <motion.div
-              animate={{
-                scale: [1, 1.08, 1],
-                opacity: [0.5, 0.9, 0.5],
-              }}
-              transition={{ duration: 3, repeat: Infinity }}
-              className="
-                absolute
-                inset-0
-                rounded-full
-                bg-violet-500/30
-                blur-xl
-              "
-            />
-
-            {/* Floating avatar — a slow, barely-there breathing
-                motion that reads as "alive" without being distracting */}
-            <motion.div
-              animate={{ y: [0, -3, 0] }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="relative"
-            >
-              {friendImage ? (
-                <img
-                  src={friendImage}
-                  alt={friendName}
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                    e.currentTarget.nextSibling.style.display = "flex";
-                  }}
-                  className="
-                    relative
-                    w-16
-                    h-16
-                    rounded-full
-                    object-cover
-                    border-2
-                    border-violet-300/70
-                    shadow-[0_0_25px_rgba(168,85,247,.45)]
-                  "
-                />
-              ) : null}
-
-              <div
-                style={{ display: friendImage ? "none" : "flex" }}
-                className="
-                  relative
-                  w-16
-                  h-16
-                  rounded-full
-                  items-center
-                  justify-center
-                  bg-violet-500/30
-                  border-2
-                  border-violet-300/70
-                  shadow-[0_0_25px_rgba(168,85,247,.45)]
-                  text-white
-                  text-xl
-                  font-semibold
-                "
-              >
-                {friendName?.[0]?.toUpperCase() || <FiUser size={22} />}
-              </div>
-            </motion.div>
-
-            {/* Online Indicator — pulsing ring behind a solid dot */}
-            <div className="absolute bottom-1 right-1">
-              <motion.div
-                animate={{ scale: [1, 1.6, 1], opacity: [0.6, 0, 0.6] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="absolute inset-0 rounded-full bg-green-400"
-              />
-              <div className="relative w-4 h-4 rounded-full bg-green-400 border-2 border-[#140E22]" />
-            </div>
-          </div>
+          {/* Avatar — now the shared component, tappable to
+              open the profile modal */}
+          <Avatar
+            src={friendImage}
+            name={friendName}
+            size="sm"
+            online
+            floating
+            breathingBorder
+            shine
+            glow
+            onClick={onAvatarClick}
+          />
 
           {/* Friend Details */}
           <div>

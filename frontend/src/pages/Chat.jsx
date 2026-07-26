@@ -4,6 +4,7 @@ import ChatLayout from "../components/layout/ChatLayout";
 import ChatHeader from "../components/chat/ChatHeader";
 import MessageList from "../components/chat/MessageList";
 import MessageInput from "../components/chat/MessageInput";
+import ProfileModal from "../components/chat/ProfileModal";
 import ErrorBoundary from "../components/ErrorBoundary";
 
 import {
@@ -28,6 +29,9 @@ export default function Chat() {
   const [nickname, setNickname] = useState("");
 
   const [messages, setMessages] = useState([]);
+  const [quotaNotice, setQuotaNotice] = useState("");
+
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   useEffect(() => {
     loadChat();
@@ -78,25 +82,11 @@ export default function Chat() {
   const wait = (ms) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
-  // ============================================================
-  // Timing helpers
-  // ============================================================
-  // First bubble gets a genuine "thinking" pause that scales with
-  // reply length (longer thought = longer pause), capped so it
-  // never feels sluggish. Every bubble after that uses a short,
-  // mostly-fixed beat with a little randomness so a burst of
-  // short replies reads as quick natural typing rather than a
-  // metronome.
-
   const thinkingDelay = (text = "") =>
     Math.min(700 + text.length * 18, 2000);
 
   const quickBeatDelay = () =>
-    400 + Math.floor(Math.random() * 200); // 400–600ms
-
-  // ============================================================
-  // Send Message
-  // ============================================================
+    400 + Math.floor(Math.random() * 200);
 
   const handleSend = async (text) => {
     if (!text.trim()) return;
@@ -113,6 +103,12 @@ export default function Chat() {
 
     try {
       const response = await sendMessageToAI(text);
+
+      if (response.quotaExceeded) {
+        setQuotaNotice(
+          "Aura's AI replies hit today's free API limit. Try again later, or set GEMINI_MODEL in backend/.env to a different model."
+        );
+      }
 
       const replies = Array.isArray(response.reply)
         ? response.reply
@@ -158,6 +154,21 @@ export default function Chat() {
     setTyping(false);
   };
 
+  // ============================================================
+  // Profile Picture Update
+  // ============================================================
+  // Called by ProfileModal after a successful upload. Updates
+  // the friend state here in the parent so both ChatHeader and
+  // ProfileModal (which receives friend as a prop) reflect the
+  // new image instantly, with no page refresh or refetch needed.
+
+  const handleFriendImageUpdated = (newImage) => {
+    setFriend((prev) => ({
+      ...prev,
+      image: newImage,
+    }));
+  };
+
   if (loading) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-[#090414]">
@@ -195,6 +206,7 @@ export default function Chat() {
             friend={friend}
             nickname={nickname}
             isTyping={typing}
+            onAvatarClick={() => setIsProfileOpen(true)}
           />
         }
         input={
@@ -203,6 +215,11 @@ export default function Chat() {
           />
         }
       >
+        {quotaNotice ? (
+          <div className="mx-4 mb-2 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/90">
+            {quotaNotice}
+          </div>
+        ) : null}
         <MessageList
           messages={messages}
           friend={friend}
@@ -210,6 +227,15 @@ export default function Chat() {
           messagesEndRef={messagesEndRef}
         />
       </ChatLayout>
+
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        friend={friend}
+        nickname={nickname}
+        isTyping={typing}
+        onFriendImageUpdated={handleFriendImageUpdated}
+      />
     </ErrorBoundary>
   );
 }
