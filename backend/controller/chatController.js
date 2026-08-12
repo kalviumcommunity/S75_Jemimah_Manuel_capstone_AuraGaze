@@ -37,9 +37,13 @@ const sendMessage = async (req, res) => {
     const userId = req.user.userId;
     const { userMessage } = req.body;
 
-    if (!userMessage || !userMessage.trim()) {
+    const text = (userMessage || "").trim();
+
+    const files = req.files || [];
+
+    if (!text && files.length === 0) {
       return res.status(400).json({
-        message: "Message is required.",
+        message: "Message or attachment is required.",
       });
     }
 
@@ -51,10 +55,21 @@ const sendMessage = async (req, res) => {
       });
     }
 
-    await Chat.create({
+    const attachments = files.map((file) => ({
+      url: `data:${file.mimetype};base64,${file.buffer.toString("base64")}`,
+      name: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+    }));
+
+    // Kept as a variable now (not a bare await) so we can return
+    // its real _id to the frontend — needed for edit/delete to
+    // work on a message during the same session it was sent in.
+    const savedUserMessage = await Chat.create({
       user: userId,
       sender: "user",
-      message: userMessage,
+      message: text,
+      attachments,
       messageType: "CHAT",
     });
 
@@ -68,10 +83,12 @@ const sendMessage = async (req, res) => {
 
     const relationship = await getRelationship(userId);
 
-    const conversationState = detectConversationState(userMessage);
+    const textForAI = text || "[The user sent an attachment]";
+
+    const conversationState = detectConversationState(textForAI);
 
     const aiReply = await generateReply({
-      userMessage,
+      userMessage: textForAI,
       userProfile: user,
       chatHistory,
       memories,
@@ -82,13 +99,19 @@ const sendMessage = async (req, res) => {
     const replyFailed = aiReply === FALLBACK_REPLY;
     const aiReplies = composeMessages(aiReply);
 
+    // Same reasoning as above — collect the saved docs so their
+    // real _ids can be returned to the frontend.
+    const savedAiMessages = [];
+
     for (const reply of aiReplies) {
-      await Chat.create({
+      const savedReply = await Chat.create({
         user: userId,
         sender: "ai",
         message: reply,
         messageType: "CHAT",
       });
+
+      savedAiMessages.push(savedReply);
     }
 
     chatHistory = await Chat.find({
@@ -97,33 +120,32 @@ const sendMessage = async (req, res) => {
       createdAt: 1,
     });
 
-    // Only spend a second Gemini call on memory extraction if the
-    // first call actually succeeded — no point burning quota
-    // extracting "memory" from a conversation that never happened.
     if (!replyFailed) {
       try {
-  const extractionResult = await extractMemory({
-    userMessage,
-    chatHistory,
-  });
+        const extractionResult = await extractMemory({
+          userMessage: textForAI,
+          chatHistory,
+        });
 
-  await processMemory({
-    user: userId,
-    extractionResult,
-  });
-} catch (err) {
-  console.error("Memory extraction skipped:", err.message);
-}
+        await processMemory({
+          user: userId,
+          extractionResult,
+        });
+      } catch (err) {
+        console.error("Memory extraction skipped:", err.message);
+      }
     }
 
     await updateRelationship({
       user: userId,
-      userMessage,
+      userMessage: textForAI,
     });
 
     res.status(200).json({
       reply: aiReplies,
       conversationState,
+      userMessageId: savedUserMessage._id,
+      aiMessageIds: savedAiMessages.map((m) => m._id),
     });
 
   } catch (error) {
@@ -157,14 +179,6 @@ const getMessages = async (req, res) => {
     });
 
     const memories = await getMemories(userId);
-
-    // ----------------------------------
-    // First Ever Message (before scheduler)
-    // ----------------------------------
-    // If this user has never had ANY chat message,
-    // send a dedicated "we're meeting for the first time"
-    // message instead of letting the daily greeting /
-    // reconnect scheduler treat it like a returning user.
 
     const firstMessageSent = await sendFirstMessageIfNeeded({
       user,
@@ -225,12 +239,6 @@ const getFriend = async (req, res) => {
 // ==========================================
 // GET FRIEND PROFILE (for Profile Modal)
 // ==========================================
-// Powers the new profile page: friend info, friendship
-// tier label, and the four stat counters. Deliberately
-// separate from getFriend (used by the lightweight chat
-// header load) so that heavier stat computation only runs
-// when the user actually opens the profile modal.
-// ==========================================
 
 const FRIENDSHIP_LABELS = {
   NEW_FRIEND: "New Friends",
@@ -259,9 +267,6 @@ const getFriendProfile = async (req, res) => {
       user: userId,
     });
 
-    // Days Together is measured from the first real conversation
-    // (already tracked on Relationship), not account creation —
-    // more accurate if a user ever re-picks their AI friend later.
     const firstConversation =
       relationship?.firstConversation || user.createdAt;
 
@@ -303,12 +308,6 @@ const getFriendProfile = async (req, res) => {
 // ==========================================
 // UPDATE FRIEND PROFILE IMAGE
 // ==========================================
-// Accepts a single uploaded image (via multer memory
-// storage), converts it to a base64 data URI, and saves
-// it directly on user.friend.image — the same field already
-// used for onboarding-selected images, so no schema change
-// or migration is needed.
-// ==========================================
 
 const updateFriendImage = async (req, res) => {
   try {
@@ -349,10 +348,133 @@ const updateFriendImage = async (req, res) => {
   }
 };
 
+// ==========================================
+// CLEAR CHAT
+// ==========================================
+// Deletes every message belonging to this user only — scoped
+// by `user: userId`, so there is no way for this to touch any
+// other user's conversation.
+// ==========================================
+
+const clearChat = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    await Chat.deleteMany({ user: userId });
+
+    res.status(200).json({
+      message: "Chat cleared.",
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Unable to clear chat.",
+    });
+  }
+};
+
+// ==========================================
+// DELETE SELECTED MESSAGES
+// ==========================================
+// Accepts an array of message IDs in the request body and
+// deletes only those, scoped to the requesting user so a
+// message ID from another user's chat can never be deleted
+// through this endpoint even if somehow guessed/supplied.
+// ==========================================
+
+const deleteMessages = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { messageIds } = req.body;
+
+    if (!Array.isArray(messageIds) || messageIds.length === 0) {
+      return res.status(400).json({
+        message: "No message IDs provided.",
+      });
+    }
+
+    const result = await Chat.deleteMany({
+      _id: { $in: messageIds },
+      user: userId,
+    });
+
+    res.status(200).json({
+      message: "Selected messages deleted.",
+      deletedCount: result.deletedCount,
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Unable to delete messages.",
+    });
+  }
+};
+
+// ==========================================
+// EDIT MESSAGE
+// ==========================================
+// Only ever updates a message where sender === "user" — this
+// is a hard restriction at the query level, not just a UI-side
+// convention, so an AI-authored message can never be edited
+// through this endpoint even if a request is crafted by hand.
+// ==========================================
+
+const editMessage = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { id } = req.params;
+    const { message } = req.body;
+
+    const trimmed = (message || "").trim();
+
+    if (!trimmed) {
+      return res.status(400).json({
+        message: "Message text is required.",
+      });
+    }
+
+    const updated = await Chat.findOneAndUpdate(
+      {
+        _id: id,
+        user: userId,
+        sender: "user",
+      },
+      {
+        message: trimmed,
+      },
+      {
+        new: true,
+      }
+    );
+
+    if (!updated) {
+      return res.status(404).json({
+        message: "Message not found or cannot be edited.",
+      });
+    }
+
+    res.status(200).json({
+      message: "Message updated.",
+      chat: updated,
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Unable to edit message.",
+    });
+  }
+};
+
 module.exports = {
   sendMessage,
   getMessages,
   getFriend,
   getFriendProfile,
   updateFriendImage,
+  clearChat,
+  deleteMessages,
+  editMessage,
 };

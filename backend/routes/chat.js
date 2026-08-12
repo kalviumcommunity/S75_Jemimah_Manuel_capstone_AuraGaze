@@ -4,6 +4,7 @@ const router = express.Router();
 
 const authMiddleware = require("../middleware/authmiddleware");
 const upload = require("../middleware/upload");
+const chatUpload = require("../middleware/chatUpload");
 
 const {
   sendMessage,
@@ -11,6 +12,9 @@ const {
   getFriend,
   getFriendProfile,
   updateFriendImage,
+  clearChat,
+  deleteMessages,
+  editMessage,
 } = require("../controller/chatController");
 
 // ==========================================
@@ -20,6 +24,17 @@ const {
 router.post(
   "/send",
   authMiddleware,
+  (req, res, next) => {
+    chatUpload.array("attachments", 4)(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({
+          message: err.message || "Upload failed.",
+        });
+      }
+
+      next();
+    });
+  },
   sendMessage
 );
 
@@ -56,11 +71,6 @@ router.get(
 // ==========================================
 // Update Friend Profile Image
 // ==========================================
-// Wraps multer's upload.single() manually so that file
-// validation errors (wrong type, too large) return a clean
-// 400 response instead of falling through to a generic
-// 500 error.
-// ==========================================
 
 router.put(
   "/friend/image",
@@ -77,6 +87,36 @@ router.put(
     });
   },
   updateFriendImage
+);
+
+// ==========================================
+// Clear Entire Chat
+// ==========================================
+
+router.delete(
+  "/clear",
+  authMiddleware,
+  clearChat
+);
+
+// ==========================================
+// Delete Selected Messages
+// ==========================================
+
+router.delete(
+  "/messages",
+  authMiddleware,
+  deleteMessages
+);
+
+// ==========================================
+// Edit a Single Message
+// ==========================================
+
+router.put(
+  "/messages/:id",
+  authMiddleware,
+  editMessage
 );
 
 module.exports = router;

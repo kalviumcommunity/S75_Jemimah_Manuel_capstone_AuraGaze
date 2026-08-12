@@ -1,5 +1,31 @@
 const mongoose = require("mongoose");
 
+// A single attachment on a message — stored as a base64 data
+// URI directly on the Chat document, the same pattern already
+// used for user.friend.image. _id: false since these are only
+// ever read/written as part of their parent message.
+const attachmentSchema = new mongoose.Schema(
+  {
+    url: {
+      type: String,
+      required: true,
+    },
+    name: {
+      type: String,
+      default: "",
+    },
+    mimetype: {
+      type: String,
+      default: "",
+    },
+    size: {
+      type: Number,
+      default: 0,
+    },
+  },
+  { _id: false }
+);
+
 const chatSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -13,10 +39,20 @@ const chatSchema = new mongoose.Schema({
     required: true,
   },
 
+  // No longer strictly required — a message can now be
+  // attachment-only with no caption text (Part 5). The
+  // controller still enforces that at least one of
+  // message/attachments is present.
   message: {
     type: String,
-    required: true,
+    default: "",
     trim: true,
+  },
+
+  // Files attached to this message (Part 5).
+  attachments: {
+    type: [attachmentSchema],
+    default: [],
   },
 
   messageType: {
