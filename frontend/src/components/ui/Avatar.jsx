@@ -20,21 +20,14 @@ const SIZE_MAP = {
 export default function Avatar({
   src,
   name = "Friend",
-
   size = "sm",
-
   online = false,
-
-  // Visual intensity toggles — the chat header wants a
-  // subtle version of this component, the profile page
-  // wants the full "alive" treatment from the brief.
   floating = true,
   breathingBorder = true,
   shine = true,
   glow = true,
-
+  objectPosition = "center top", // NEW — biases the crop toward the face
   onClick,
-
   className = "",
 }) {
   const px = typeof size === "number" ? size : SIZE_MAP[size] || SIZE_MAP.sm;
@@ -132,16 +125,17 @@ export default function Avatar({
           }}
         >
           {src ? (
-            <img
-              src={src}
-              alt={name}
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-                e.currentTarget.nextSibling.style.display = "flex";
-              }}
-              className="w-full h-full object-cover"
-            />
-          ) : null}
+    <img
+      src={src}
+      alt={name}
+      onError={(e) => {
+        e.currentTarget.style.display = "none";
+        e.currentTarget.nextSibling.style.display = "flex";
+      }}
+      className="w-full h-full object-cover"
+      style={{ objectPosition }}
+    />
+  ) : null}
 
           <div
             style={{

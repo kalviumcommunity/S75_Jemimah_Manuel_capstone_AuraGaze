@@ -9,6 +9,7 @@ export default function ChatLayout({
   header,
   children,
   input,
+  scrollContainerRef, // NEW: forwarded to the scrollable <main>
 }) {
   return (
     <div className="relative h-screen w-full overflow-hidden bg-[#070312]">
@@ -46,26 +47,28 @@ export default function ChatLayout({
         {/* ================= Messages ================= */}
 
         <main
-          className="
-            flex-1
-            overflow-y-auto
-            overflow-x-hidden
-            scroll-smooth
+  ref={scrollContainerRef}
+  className="
+    flex-1J
+    min-h-0
+    overflow-y-auto
+    overflow-x-hidden
+    scroll-smooth
 
-            px-4
-            sm:px-6
-            md:px-8
-            lg:px-10
-            xl:px-14
+    px-4
+    sm:px-6
+    md:px-8
+    lg:px-10
+    xl:px-14
 
-            py-8
-            pb-40
+    py-8
+    pb-8
 
-            scrollbar-thin
-            scrollbar-track-transparent
-            scrollbar-thumb-white/10
-          "
-        >
+    scrollbar-thin
+    scrollbar-track-transparent
+    scrollbar-thumb-white/10
+  "
+>
           <div
             className="
               w-full
@@ -129,8 +132,6 @@ export default function ChatLayout({
                 backdrop-blur-3xl
 
                 shadow-[0_20px_60px_rgba(0,0,0,.45)]
-
-                overflow-hidden
               "
             >
               {input}
