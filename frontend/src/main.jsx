@@ -1,14 +1,21 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
+import React from "react";
+import ReactDOM from "react-dom/client";
 
-import App from "./App.jsx";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 import { OnboardingProvider } from "./context/OnboardingContext";
 
-createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <OnboardingProvider>
-      <App />
-    </OnboardingProvider>
-  </StrictMode>
+import App from "./App";
+import "./styles/index.css";
+
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <OnboardingProvider>
+        <App />
+      </OnboardingProvider>
+    </GoogleOAuthProvider>
+  </React.StrictMode>
 );

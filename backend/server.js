@@ -1,5 +1,10 @@
 require("dotenv").config(); // must run before ANY other require below
 
+console.log(
+  "Google Client ID loaded:",
+  process.env.GOOGLE_CLIENT_ID
+);
+
 const express = require("express");
 const cors = require("cors");
 const path = require("path");

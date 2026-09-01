@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema(
     // =========================
     // Authentication
     // =========================
+
     username: {
       type: String,
       required: true,
@@ -18,20 +19,45 @@ const userSchema = new mongoose.Schema(
       unique: true,
       trim: true,
       lowercase: true,
-      match: [
-        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-        "Please enter a valid email address",
-      ],
+
+      // Supports domains such as:
+      // gmail.com
+      // outlook.com
+      // kalvium.community
+      // university.ac.in
+      validate: {
+        validator: function (value) {
+          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+        },
+        message: "Please enter a valid email address",
+      },
     },
 
+    // Password is required for normal email/password users,
+    // but Google users don't have a password.
     password: {
       type: String,
-      required: true,
+      default: null,
+    },
+
+    // Google account ID
+    googleId: {
+      type: String,
+      default: null,
+      sparse: true,
+    },
+
+    // Authentication provider
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
     },
 
     // =========================
     // Onboarding Status
     // =========================
+
     profileCompleted: {
       type: Boolean,
       default: false,
@@ -40,6 +66,7 @@ const userSchema = new mongoose.Schema(
     // =========================
     // User Profile
     // =========================
+
     profile: {
       nickname: {
         type: String,
@@ -54,6 +81,7 @@ const userSchema = new mongoose.Schema(
     // =========================
     // AI Best Friend
     // =========================
+
     friend: {
       name: {
         type: String,

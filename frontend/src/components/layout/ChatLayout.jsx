@@ -49,7 +49,7 @@ export default function ChatLayout({
         <main
   ref={scrollContainerRef}
   className="
-    flex-1J
+    flex-1
     min-h-0
     overflow-y-auto
     overflow-x-hidden

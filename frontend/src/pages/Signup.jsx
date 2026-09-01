@@ -7,6 +7,7 @@ import Typography from "../components/ui/Typography";
 import TextField from "../components/ui/TextField";
 import PrimaryButton from "../components/ui/PrimaryButton";
 import SecondaryButton from "../components/ui/SecondaryButton";
+import GoogleAuthButton from "../components/auth/GoogleAuthButton";
 
 import spacing from "../theme/spacing";
 
@@ -32,10 +33,31 @@ export default function Signup() {
     }));
   };
 
+  const handleGoogleSuccess = (data) => {
+    localStorage.setItem("token", data.token);
+    localStorage.setItem(
+      "username",
+      data.username
+    );
+
+    if (data.profileCompleted) {
+      navigate("/chat");
+    } else {
+      navigate("/nickname");
+    }
+  };
+
+  const handleGoogleError = (message) => {
+    setError(message);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (formData.password !== formData.confirmPassword) {
+    if (
+      formData.password !==
+      formData.confirmPassword
+    ) {
       setError("Passwords do not match.");
       return;
     }
@@ -44,14 +66,28 @@ export default function Signup() {
     setError("");
 
     try {
-      const response = await axios.post(`${backendURL}/auth/signup`, formData);
+      const response = await axios.post(
+        `${backendURL}/auth/signup`,
+        formData
+      );
 
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("username", response.data.username);
+      localStorage.setItem(
+        "token",
+        response.data.token
+      );
+
+      localStorage.setItem(
+        "username",
+        response.data.username
+      );
 
       navigate("/nickname");
+
     } catch (err) {
-      setError(err.response?.data?.message || "Signup failed. Please try again.");
+      setError(
+        err.response?.data?.message ||
+          "Signup failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -59,8 +95,9 @@ export default function Signup() {
 
   return (
     <AuthLayout size="md">
+
       {/* ===========================
-          Hero Section
+          HERO
       =========================== */}
 
       <div
@@ -75,8 +112,10 @@ export default function Signup() {
           animate
           style={{
             marginBottom: spacing.margin.sm,
-            fontFamily: "'Playfair Display', serif",
-            fontSize: "clamp(42px, 6vw, 64px)",
+            fontFamily:
+              "'Playfair Display', serif",
+            fontSize:
+              "clamp(42px, 6vw, 64px)",
             lineHeight: 1.15,
             textShadow:
               "0 0 12px rgba(197,140,255,0.85), 0 0 28px rgba(157,92,255,0.6), 0 0 55px rgba(124,92,252,0.45)",
@@ -86,25 +125,27 @@ export default function Signup() {
         </Typography>
 
         <Typography
-  variant="subtitle"
-  align="center"
-  animate
-  style={{
-    maxWidth: 420,
-    margin: "0 auto",
-    fontSize: "16px",
-    lineHeight: 1.6,
-    opacity: 0.9,
-  }}
->
-  Begin your beautiful friendship journey.
-  <br />
-  Create your account and get started{"\u00A0"}💜
-</Typography>
+          variant="subtitle"
+          align="center"
+          animate
+          style={{
+            maxWidth: 420,
+            margin: "0 auto",
+            fontSize: "16px",
+            lineHeight: 1.6,
+            opacity: 0.9,
+          }}
+        >
+          Begin your beautiful friendship
+          journey.
+          <br />
+          Create your account and get started
+          {"\u00A0"}💜
+        </Typography>
       </div>
 
       {/* ===========================
-          Error Message
+          ERROR
       =========================== */}
 
       {error && (
@@ -113,8 +154,10 @@ export default function Signup() {
             marginBottom: spacing.margin.lg,
             padding: "14px 18px",
             borderRadius: 18,
-            background: "rgba(239,68,68,.12)",
-            border: "1px solid rgba(239,68,68,.30)",
+            background:
+              "rgba(239,68,68,.12)",
+            border:
+              "1px solid rgba(239,68,68,.30)",
             color: "#FCA5A5",
             textAlign: "center",
             fontWeight: 500,
@@ -125,10 +168,62 @@ export default function Signup() {
       )}
 
       {/* ===========================
-          Signup Form
+          GOOGLE
+      =========================== */}
+
+      <GoogleAuthButton
+        onSuccess={handleGoogleSuccess}
+        onError={handleGoogleError}
+        disabled={loading}
+      />
+
+      {/* ===========================
+          DIVIDER
+      =========================== */}
+
+      <div
+        className="flex items-center"
+        style={{
+          marginTop: spacing.margin.lg,
+          marginBottom: spacing.margin.lg,
+          gap: spacing.margin.md,
+        }}
+      >
+        <div
+          style={{
+            flex: 1,
+            height: 1,
+            background:
+              "rgba(255,255,255,.12)",
+          }}
+        />
+
+        <Typography
+          variant="caption"
+          style={{
+            letterSpacing: "4px",
+            opacity: 0.7,
+          }}
+        >
+          OR
+        </Typography>
+
+        <div
+          style={{
+            flex: 1,
+            height: 1,
+            background:
+              "rgba(255,255,255,.12)",
+          }}
+        />
+      </div>
+
+      {/* ===========================
+          SIGNUP FORM
       =========================== */}
 
       <form onSubmit={handleSubmit}>
+
         <TextField
           label="Email"
           name="email"
@@ -170,36 +265,47 @@ export default function Signup() {
           placeholder="Retype your password"
           autoComplete="new-password"
           required
-          error={error === "Passwords do not match." ? error : undefined}
+          error={
+            error === "Passwords do not match."
+              ? error
+              : undefined
+          }
         />
 
-        <div style={{ marginTop: spacing.margin.lg }}>
-          <PrimaryButton type="submit" loading={loading}>
-            {loading ? "Creating Account..." : "Create Account"}
+        <div
+          style={{
+            marginTop: spacing.margin.lg,
+          }}
+        >
+          <PrimaryButton
+            type="submit"
+            loading={loading}
+          >
+            {loading
+              ? "Creating Account..."
+              : "Create Account"}
           </PrimaryButton>
         </div>
 
-        <div
-          className="flex items-center"
-          style={{
-            marginTop: spacing.margin.lg,
-            marginBottom: spacing.margin.lg,
-            gap: spacing.margin.md,
-          }}
-        >
-          <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,.12)" }} />
-
-          <Typography variant="caption" style={{ letterSpacing: "4px" }}>
-            OR
-          </Typography>
-
-          <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,.12)" }} />
-        </div>
-
-        <SecondaryButton type="button" onClick={() => navigate("/login")}>
-          Already have an account?
-        </SecondaryButton>
       </form>
+
+      {/* ===========================
+          LOGIN
+      =========================== */}
+
+      <div
+        style={{
+          marginTop: spacing.margin.lg,
+        }}
+      >
+        <SecondaryButton
+          type="button"
+          onClick={() => navigate("/login")}
+        >
+          Already have an account? Login
+        </SecondaryButton>
+      </div>
+
     </AuthLayout>
   );
 }
