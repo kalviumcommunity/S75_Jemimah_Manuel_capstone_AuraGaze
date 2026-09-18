@@ -1,65 +1,85 @@
 import { useMemo } from "react";
 
-/*
- * Magic Chat message positioning.
- *
- * User messages can contain:
- *
- * target: {
- *   x: number,
- *   y: number
- * }
- *
- * When a target exists, the message tries to land there.
- *
- * AI messages without a target are automatically positioned
- * around the conversation.
- */
-
 const MIN_TOP = 40;
 const GAP = 24;
 const DEFAULT_WIDTH = 220;
 
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(value, max));
-}
-
-function rectanglesOverlap(a, b) {
-  return !(
-    a.right + GAP < b.left ||
-    a.left > b.right + GAP ||
-    a.bottom + GAP < b.top ||
-    a.top > b.bottom + GAP
+function clamp(
+  value,
+  min,
+  max
+) {
+  return Math.max(
+    min,
+    Math.min(max, value)
   );
 }
 
-function getMessageHeight(message) {
-  const text = message?.text || "";
+function rectanglesOverlap(
+  a,
+  b
+) {
+  return !(
+    a.right + GAP <
+      b.left ||
+    a.left >
+      b.right + GAP ||
+    a.bottom + GAP <
+      b.top ||
+    a.top >
+      b.bottom + GAP
+  );
+}
+
+function getMessageHeight(
+  message,
+  width
+) {
+  const text =
+    String(
+      message?.text || ""
+    );
 
   /*
-   * Rough visual height estimation.
-   *
-   * This doesn't need to be exact because ScrollMessage
-   * itself is animated and the messages have generous spacing.
+   * Approximate line width.
    */
 
-  const charsPerLine = 28;
+  const charsPerLine =
+    Math.max(
+      16,
+      Math.floor(
+        width / 8
+      )
+    );
 
-  const lines = Math.max(
-    1,
-    Math.ceil(text.length / charsPerLine)
-  );
+  const lines =
+    Math.max(
+      1,
+      Math.ceil(
+        text.length /
+          charsPerLine
+      )
+    );
 
   const imageHeight =
-    message?.attachments?.some((a) =>
-      a?.mimetype?.startsWith("image/")
+    message?.attachments?.some(
+      (attachment) =>
+        attachment?.mimetype?.startsWith(
+          "image/"
+        )
     )
       ? 170
       : 0;
 
   return Math.min(
-    220,
-    58 + lines * 22 + imageHeight
+    260,
+    Math.max(
+      58,
+      34 +
+        lines * 22 +
+        18 +
+        imageHeight
+    )
   );
 }
 
@@ -68,64 +88,65 @@ export default function useScrollCollision({
   containerWidth = 720,
 }) {
   return useMemo(() => {
-    const safeWidth = Math.max(
-      containerWidth,
-      280
-    );
+    const safeWidth =
+      Math.max(
+        containerWidth,
+        280
+      );
 
     const positions = [];
 
     const occupied = [];
 
-    /*
-     * -------------------------------------------------------
-     * Find a free position for automatic messages.
-     * -------------------------------------------------------
-     */
+    // =======================================================
+    // FREE POSITION FOR NORMAL / AI MESSAGES
+    // =======================================================
+
     const findFreePosition = ({
       preferredX,
       preferredY,
       width,
       height,
     }) => {
-      const maxX = Math.max(
-        safeWidth - width,
-        10
-      );
+      const maxX =
+        Math.max(
+          safeWidth -
+            width -
+            10,
+          10
+        );
 
-      let x = clamp(
-        preferredX,
-        10,
-        maxX
-      );
+      const x =
+        clamp(
+          preferredX,
+          10,
+          maxX
+        );
 
-      let y = Math.max(
-        preferredY,
-        MIN_TOP
-      );
+      let y =
+        Math.max(
+          preferredY,
+          MIN_TOP
+        );
 
-      /*
-       * First try the preferred position.
-       */
       let candidate = {
         left: x,
         top: y,
-        right: x + width,
-        bottom: y + height,
+        right:
+          x + width,
+        bottom:
+          y + height,
       };
 
       let attempts = 0;
 
-      /*
-       * If it overlaps another message,
-       * move downward until a free area is found.
-       */
       while (
-        occupied.some((rect) =>
-          rectanglesOverlap(
-            candidate,
-            rect
-          )
+        occupied.some(
+          (rect) =>
+            rectanglesOverlap(
+              candidate,
+              rect
+            )
         ) &&
         attempts < 100
       ) {
@@ -134,204 +155,184 @@ export default function useScrollCollision({
         candidate = {
           left: x,
           top: y,
-          right: x + width,
-          bottom: y + height,
+          right:
+            x + width,
+          bottom:
+            y + height,
         };
 
         attempts++;
       }
 
-      /*
-       * If the target is occupied, try horizontally
-       * around it before going endlessly downward.
-       */
-      if (
-        occupied.some((rect) =>
-          rectanglesOverlap(
-            candidate,
-            rect
-          )
-        )
-      ) {
-        const offsets = [
-          -width - 30,
-          width + 30,
-          -width * 0.5,
-          width * 0.5,
-          0,
-        ];
-
-        for (const offset of offsets) {
-          const testX = clamp(
-            x + offset,
-            10,
-            maxX
-          );
-
-          const test = {
-            left: testX,
-            top: y,
-            right: testX + width,
-            bottom: y + height,
-          };
-
-          if (
-            !occupied.some((rect) =>
-              rectanglesOverlap(
-                test,
-                rect
-              )
-            )
-          ) {
-            candidate = test;
-            break;
-          }
-        }
-      }
-
       return {
-        x: candidate.left,
-        y: candidate.top,
+        x:
+          candidate.left,
+
+        y:
+          candidate.top,
+
         width,
         height,
       };
     };
 
-    /*
-     * -------------------------------------------------------
-     * POSITION EVERY MESSAGE
-     * -------------------------------------------------------
-     */
+    // =======================================================
+    // EVERY MESSAGE
+    // =======================================================
+
     messages.forEach(
-      (message, index) => {
+      (
+        message,
+        index
+      ) => {
+        const isUser =
+          message?.sender ===
+          "user";
+
+        const hasTarget =
+          isUser &&
+          message?.target &&
+          Number.isFinite(
+            Number(
+              message.target.x
+            )
+          ) &&
+          Number.isFinite(
+            Number(
+              message.target.y
+            )
+          );
+
+        /*
+         * User bubbles are slightly narrower than
+         * before, which makes them look more like
+         * WhatsApp / Instagram.
+         */
+
         const width =
-          message?.width ||
-          DEFAULT_WIDTH;
+          Math.min(
+            isUser
+              ? 300
+              : 280,
+
+            Math.max(
+              safeWidth - 24,
+              150
+            )
+          );
 
         const height =
-          getMessageHeight(message);
+          getMessageHeight(
+            message,
+            width
+          );
 
-        /*
-         * ---------------------------------------------------
-         * TARGETED MESSAGE
-         *
-         * This is the important part.
-         *
-         * If the user launched a scroll toward:
-         *
-         * { x: 420, y: 300 }
-         *
-         * we preserve that location.
-         * ---------------------------------------------------
-         */
-        if (message?.target) {
-          const targetX =
-            Number(message.target.x);
+        // =====================================================
+        // TARGETED USER MESSAGE
+        // =====================================================
 
-          const targetY =
-            Number(message.target.y);
+        if (hasTarget) {
+          /*
+           * IMPORTANT:
+           *
+           * x/y represent the CENTER.
+           *
+           * ScrollMessage will use:
+           *
+           * transform:
+           * translate(-50%, -50%)
+           *
+           * Therefore the bubble center is exactly
+           * target.x / target.y.
+           */
 
-          if (
-            Number.isFinite(targetX) &&
-            Number.isFinite(targetY)
-          ) {
-            /*
-             * IMPORTANT:
-             *
-             * We DON'T move the message away from the
-             * target just because another message exists.
-             *
-             * The selected target is the user's intended
-             * landing position.
-             *
-             * Collision is only used as a fallback if the
-             * target is completely invalid/outside canvas.
-             */
-
-            const x = clamp(
-              targetX - width / 2,
-              10,
-              Math.max(
-                safeWidth - width,
-                10
-              )
+          const centerX =
+            Number(
+              message.target.x
             );
 
-            const y = Math.max(
-              targetY - height / 2,
-              MIN_TOP
+          const centerY =
+            Number(
+              message.target.y
             );
 
-            const position = {
-              id:
-                message.id ??
-                message._id ??
-                `message-${index}`,
+          positions.push({
+            id:
+              message.id ??
+              message._id ??
+              `message-${index}`,
 
-              x,
-              y,
+            x: centerX,
 
-              width,
-              height,
+            y: centerY,
 
-              /*
-               * Small rotation makes the paper feel natural.
-               */
-              rotate:
-                message.rotate ??
-                (index % 2 === 0
-                  ? -1.2
-                  : 1.2),
-            };
+            width,
 
-            positions.push(position);
+            height,
 
-            occupied.push({
-              left: x,
-              top: y,
-              right: x + width,
-              bottom: y + height,
-            });
+            rotate: 0,
 
-            return;
-          }
+            anchored: true,
+          });
+
+          /*
+           * Occupied rectangle is only used so that
+           * future AI messages know this area exists.
+           */
+
+          occupied.push({
+            left:
+              centerX -
+              width / 2,
+
+            top:
+              centerY -
+              height / 2,
+
+            right:
+              centerX +
+              width / 2,
+
+            bottom:
+              centerY +
+              height / 2,
+          });
+
+          return;
         }
 
-        /*
-         * ---------------------------------------------------
-         * NORMAL / AI MESSAGE
-         * ---------------------------------------------------
-         */
+        // =====================================================
+        // NORMAL / AI MESSAGE
+        // =====================================================
 
         const isAI =
-          message?.sender === "ai";
+          message?.sender ===
+          "ai";
 
-        /*
-         * Alternate sides so AI and user messages don't
-         * become a boring vertical list.
-         */
-        const preferredX = isAI
-          ? 35
-          : safeWidth -
-            width -
-            35;
+        const preferredX =
+          isAI
+            ? 20
+            : safeWidth -
+              width -
+              20;
 
-        /*
-         * Place newer messages progressively lower.
-         */
         const preferredY =
-          index === 0
-            ? MIN_TOP
-            : positions.reduce(
-                (max, position) =>
-                  Math.max(
-                    max,
-                    position.y +
-                      position.height +
-                      35
-                  ),
-                MIN_TOP
-              );
+          positions.reduce(
+            (
+              max,
+              position
+            ) =>
+              Math.max(
+                max,
+                position.y +
+                  (position.anchored
+                    ? position.height /
+                      2
+                    : position.height) +
+                  45
+              ),
+            MIN_TOP
+          );
 
         const result =
           findFreePosition({
@@ -347,49 +348,83 @@ export default function useScrollCollision({
             message._id ??
             `message-${index}`,
 
-          x: result.x,
-          y: result.y,
+          x:
+            result.x,
 
-          width,
-          height,
+          y:
+            result.y,
+
+          width:
+            result.width,
+
+          height:
+            result.height,
 
           rotate:
-            message.rotate ??
-            (index % 2 === 0
-              ? -1.2
-              : 1.2),
+            isAI
+              ? index % 3 === 0
+                ? -0.6
+                : 0.5
+              : index % 2 === 0
+              ? -1
+              : 1,
+
+          anchored: false,
         });
 
         occupied.push({
-          left: result.x,
-          top: result.y,
+          left:
+            result.x,
+
+          top:
+            result.y,
+
           right:
-            result.x + width,
+            result.x +
+            result.width,
+
           bottom:
-            result.y + height,
+            result.y +
+            result.height,
         });
       }
     );
 
-    /*
-     * -------------------------------------------------------
-     * TOTAL CANVAS HEIGHT
-     * -------------------------------------------------------
-     */
+    // =======================================================
+    // CANVAS HEIGHT
+    // =======================================================
 
-    const totalHeight = Math.max(
-      560,
-      positions.reduce(
-        (max, position) =>
-          Math.max(
+    const totalHeight =
+      Math.max(
+        700,
+
+        positions.reduce(
+          (
             max,
-            position.y +
-              position.height +
-              100
-          ),
-        560
-      )
-    );
+            position
+          ) => {
+            if (
+              position.anchored
+            ) {
+              return Math.max(
+                max,
+                position.y +
+                  position.height /
+                    2 +
+                  140
+              );
+            }
+
+            return Math.max(
+              max,
+              position.y +
+                position.height +
+                140
+            );
+          },
+          700
+        )
+      );
 
     return {
       positions,

@@ -6,7 +6,7 @@ export default function Trajectory({
 }) {
   if (
     !visible ||
-    !points.length
+    points.length === 0
   ) {
     return null;
   }
@@ -17,12 +17,15 @@ export default function Trajectory({
         absolute
         inset-0
         pointer-events-none
-        z-40
+        z-[200]
         overflow-hidden
       "
     >
       {points.map(
-        (point, index) => (
+        (
+          point,
+          index
+        ) => (
           <motion.div
             key={index}
             initial={{
@@ -35,8 +38,10 @@ export default function Trajectory({
             }}
             transition={{
               delay:
-                index * 0.03,
-              duration: 0.15,
+                index * 0.025,
+
+              duration:
+                0.14,
             }}
             className="absolute"
             style={{
@@ -44,30 +49,32 @@ export default function Trajectory({
                 `calc(50% + ${point.x}px)`,
 
               bottom:
-                `${85 + point.y}px`,
+                `${72 + point.y}px`,
 
               transform:
                 "translate(-50%, 50%)",
             }}
           >
-            {/* Glow */}
             <div
               className="
                 absolute
                 rounded-full
+                pointer-events-none
               "
               style={{
-                width: 16,
-                height: 16,
+                width: 18,
+                height: 18,
                 left: -6,
                 top: -6,
+
                 background:
                   "radial-gradient(circle, rgba(180,130,255,.35), transparent 70%)",
-                filter: "blur(5px)",
+
+                filter:
+                  "blur(5px)",
               }}
             />
 
-            {/* Dot */}
             <motion.div
               animate={{
                 scale: [
@@ -75,17 +82,18 @@ export default function Trajectory({
                   1.35,
                   1,
                 ],
+
                 opacity: [
-                  0.7,
+                  0.65,
                   1,
-                  0.7,
+                  0.65,
                 ],
               }}
               transition={{
                 duration: 1,
                 repeat: Infinity,
                 delay:
-                  index * 0.08,
+                  index * 0.07,
               }}
               className="
                 rounded-full
@@ -93,8 +101,10 @@ export default function Trajectory({
               style={{
                 width: 6,
                 height: 6,
+
                 background:
                   "#C084FC",
+
                 boxShadow:
                   "0 0 8px rgba(192,132,252,.9), 0 0 18px rgba(168,85,247,.65)",
               }}

@@ -7,10 +7,10 @@ import {
 import { motion } from "framer-motion";
 
 import {
+  Target,
   Send,
   Smile,
   Paperclip,
-  Target,
 } from "lucide-react";
 
 import useSlingshotPhysics from "../../../hooks/useSlingshotPhysics";
@@ -29,18 +29,11 @@ export default function SlingshotInput({
   targetLocked = false,
 }) {
   const [message, setMessage] = useState("");
-
-  const [loaded, setLoaded] =
-    useState(false);
-
-  const [dragging, setDragging] =
-    useState(false);
-
-  const [launching, setLaunching] =
-    useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [launching, setLaunching] = useState(false);
 
   const wrapperRef = useRef(null);
-
   const inputRef = useRef(null);
 
   const {
@@ -53,23 +46,17 @@ export default function SlingshotInput({
     reset,
   } = useSlingshotPhysics();
 
-  /*
-   * ---------------------------------------------------------
-   * MESSAGE LOADED INTO SLINGSHOT
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // MESSAGE LOADED
+  // =========================================================
 
   useEffect(() => {
-    setLoaded(
-      message.trim().length > 0
-    );
+    setLoaded(message.trim().length > 0);
   }, [message]);
 
-  /*
-   * ---------------------------------------------------------
-   * START DRAG
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // START DRAG
+  // =========================================================
 
   const handleMouseDown = (event) => {
     if (
@@ -91,14 +78,14 @@ export default function SlingshotInput({
     });
   };
 
-  /*
-   * ---------------------------------------------------------
-   * DRAG
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // DRAG
+  // =========================================================
 
   const handleMouseMove = (event) => {
-    if (!dragging) return;
+    if (!dragging) {
+      return;
+    }
 
     updateDrag({
       x: event.clientX,
@@ -106,67 +93,55 @@ export default function SlingshotInput({
     });
   };
 
-  /*
-   * ---------------------------------------------------------
-   * RELEASE
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // RELEASE
+  // =========================================================
 
   const handleMouseUp = async () => {
-    if (!dragging) return;
+    if (!dragging) {
+      return;
+    }
 
     setDragging(false);
 
     const velocity = releaseDrag();
-
-    /*
-     * -------------------------------------------------------
-     * SAFETY CHECKS
-     * -------------------------------------------------------
-     */
 
     if (!targetLocked) {
       reset();
       return;
     }
 
-    const trimmedMessage =
-      message.trim();
+    const trimmedMessage = message.trim();
 
     if (!trimmedMessage) {
       reset();
       return;
     }
 
-    /*
-     * -------------------------------------------------------
-     * SAVE THE MESSAGE BEFORE CLEARING INPUT
-     * -------------------------------------------------------
-     *
-     * This is important.
-     *
-     * We save "hi" into trimmedMessage first.
-     * Then we clear the input immediately.
-     *
-     * The flying scroll receives "hi" through onLaunch().
-     * -------------------------------------------------------
-     */
-
     setLaunching(true);
 
     /*
-     * 🚨 THIS FIXES YOUR BUG
-     *
-     * Clear the input immediately when the user releases.
+     * Clear immediately after release.
+     * The flying scroll already receives the text
+     * through trimmedMessage.
      */
-    setMessage("");
 
+    setMessage("");
     setLoaded(false);
 
     try {
       await onLaunch?.({
         text: trimmedMessage,
         velocity,
+
+        /*
+         * IMPORTANT:
+         * MagicChat uses this real DOM element
+         * to calculate the exact launch position.
+         */
+
+        slingshotElement:
+          wrapperRef.current,
       });
     } catch (error) {
       console.error(
@@ -180,11 +155,9 @@ export default function SlingshotInput({
     }
   };
 
-  /*
-   * ---------------------------------------------------------
-   * GLOBAL MOUSE EVENTS
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // GLOBAL MOUSE EVENTS
+  // =========================================================
 
   useEffect(() => {
     window.addEventListener(
@@ -210,20 +183,34 @@ export default function SlingshotInput({
     };
   });
 
-  /*
-   * ---------------------------------------------------------
-   * KEYBOARD
-   *
-   * Enter does NOT send.
-   * Slingshot release is the send action.
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // INPUT
+  // =========================================================
+
+  const handleChange = (event) => {
+    const value =
+      event.target.value.slice(
+        0,
+        MAX_MESSAGE_LENGTH
+      );
+
+    setMessage(value);
+  };
 
   const handleKeyDown = (event) => {
+    /*
+     * Enter does NOT send.
+     * Magic Chat sends through slingshot release.
+     */
+
     if (event.key === "Enter") {
       event.preventDefault();
     }
   };
+
+  // =========================================================
+  // UI
+  // =========================================================
 
   return (
     <div
@@ -235,9 +222,9 @@ export default function SlingshotInput({
         select-none
       "
     >
-      {/* =================================================
+      {/* =====================================================
           TARGET INSTRUCTION
-      ================================================= */}
+      ===================================================== */}
 
       {!targetLocked &&
         loaded && (
@@ -268,10 +255,13 @@ export default function SlingshotInput({
             style={{
               background:
                 "rgba(30,20,55,.75)",
+
               border:
                 "1px solid rgba(192,132,252,.25)",
+
               backdropFilter:
                 "blur(14px)",
+
               boxShadow:
                 "0 0 25px rgba(168,85,247,.18)",
             }}
@@ -281,27 +271,29 @@ export default function SlingshotInput({
               className="text-violet-300"
             />
 
-            <span className="
-              text-xs
-              text-violet-200/80
-            ">
+            <span
+              className="
+                text-xs
+                text-violet-200/80
+              "
+            >
               Choose a target first
             </span>
           </motion.div>
         )}
 
-      {/* =================================================
+      {/* =====================================================
           TRAJECTORY
-      ================================================= */}
+      ===================================================== */}
 
       <Trajectory
         visible={isDragging}
         points={trajectory}
       />
 
-      {/* =================================================
+      {/* =====================================================
           SLINGSHOT
-      ================================================= */}
+      ===================================================== */}
 
       <div
         className="
@@ -313,10 +305,14 @@ export default function SlingshotInput({
           h-48
         "
       >
-        {/* Back */}
+        {/* ---------------------------------------------------
+            SLINGSHOT BACK
+        --------------------------------------------------- */}
+
         <img
           src={slingshotBack}
           alt=""
+          draggable={false}
           className="
             absolute
             inset-0
@@ -327,17 +323,17 @@ export default function SlingshotInput({
           "
         />
 
-        {/* =================================================
+        {/* ---------------------------------------------------
             LOADED SCROLL
-        ================================================= */}
+        --------------------------------------------------- */}
 
         {loaded && (
           <motion.img
+            ref={inputRef}
             src={scrollRolled}
             alt=""
-            onMouseDown={
-              handleMouseDown
-            }
+            draggable={false}
+            onMouseDown={handleMouseDown}
             animate={{
               x: dragPosition.x,
               y: dragPosition.y,
@@ -360,6 +356,7 @@ export default function SlingshotInput({
               active:cursor-grabbing
               z-20
               touch-none
+              select-none
             "
             style={{
               filter: targetLocked
@@ -369,10 +366,14 @@ export default function SlingshotInput({
           />
         )}
 
-        {/* Front */}
+        {/* ---------------------------------------------------
+            SLINGSHOT FRONT
+        --------------------------------------------------- */}
+
         <img
           src={slingshotFront}
           alt=""
+          draggable={false}
           className="
             absolute
             inset-0
@@ -385,16 +386,20 @@ export default function SlingshotInput({
         />
       </div>
 
-      {/* =================================================
-          INPUT BAR
-      ================================================= */}
+      {/* =====================================================
+          MESSAGE INPUT
+      ===================================================== */}
 
       <div
         className="
           absolute
+          left-1/2
+          -translate-x-1/2
           bottom-0
-          left-0
-          right-0
+          w-full
+          max-w-xl
+          px-4
+          z-[100]
         "
       >
         <div
@@ -402,163 +407,119 @@ export default function SlingshotInput({
             relative
             flex
             items-center
-            gap-3
-            rounded-full
-            px-5
-            py-3
-            bg-white/10
-            backdrop-blur-xl
-            border
-            border-white/15
+            gap-2
+            rounded-2xl
+            px-3
+            py-2
           "
+          style={{
+            background:
+              "rgba(18,12,35,.82)",
+
+            border:
+              "1px solid rgba(255,255,255,.10)",
+
+            backdropFilter:
+              "blur(18px)",
+
+            boxShadow:
+              "0 12px 40px rgba(0,0,0,.35)",
+          }}
         >
-          {/* Emoji */}
           <button
             type="button"
-            disabled={
-              disabled ||
-              launching
-            }
             className="
-              text-violet-200
+              shrink-0
+              flex
+              items-center
+              justify-center
+              w-9
+              h-9
+              rounded-full
+              text-white/50
               hover:text-white
+              hover:bg-white/10
               transition
-              disabled:opacity-40
             "
           >
-            <Smile size={20} />
+            <Smile size={19} />
           </button>
 
-          {/* Attachment */}
-          <button
-            type="button"
-            disabled={
-              disabled ||
-              launching
-            }
-            className="
-              text-violet-200
-              hover:text-white
-              transition
-              disabled:opacity-40
-            "
-          >
-            <Paperclip size={20} />
-          </button>
-
-          {/* Text input */}
           <input
             ref={inputRef}
+            value={message}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
             disabled={
               disabled ||
               launching
             }
-            value={message}
             maxLength={
               MAX_MESSAGE_LENGTH
             }
-            onChange={(event) =>
-              setMessage(
-                event.target.value
-              )
-            }
-            onKeyDown={handleKeyDown}
             placeholder={
               targetLocked
-                ? "Write your message..."
-                : "Choose a target..."
+                ? "Load your message into the scroll..."
+                : "Choose a target first..."
             }
             className="
               flex-1
               min-w-0
               bg-transparent
               outline-none
+              text-sm
               text-white
-              placeholder:text-violet-200/60
+              placeholder:text-white/35
             "
           />
 
-          {/* Character count */}
-          {message.length > 400 && (
-            <span className="
-              text-[10px]
-              text-violet-200/50
-            ">
-              {message.length}/
-              {MAX_MESSAGE_LENGTH}
-            </span>
-          )}
-
-          {/* Visual send indicator */}
-          <motion.button
+          <button
             type="button"
-            disabled={
-              !message.trim() ||
-              !targetLocked ||
-              disabled ||
-              launching
-            }
-            animate={
-              targetLocked &&
-              message.trim()
-                ? {
-                    scale: [
-                      1,
-                      1.05,
-                      1,
-                    ],
-                  }
-                : {}
-            }
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-            }}
             className="
-              w-11
-              h-11
-              rounded-full
-              bg-violet-500
+              shrink-0
               flex
               items-center
               justify-center
-              hover:bg-violet-400
-              disabled:opacity-40
-              disabled:cursor-not-allowed
+              w-9
+              h-9
+              rounded-full
+              text-white/50
+              hover:text-white
+              hover:bg-white/10
               transition
             "
-            onClick={() => {
-              /*
-               * Intentionally empty.
-               *
-               * The message is sent by pulling
-               * and releasing the scroll.
-               */
+          >
+            <Paperclip size={18} />
+          </button>
+
+          <div
+            className="
+              shrink-0
+              flex
+              items-center
+              justify-center
+              w-9
+              h-9
+              rounded-full
+            "
+            style={{
+              background:
+                loaded &&
+                targetLocked
+                  ? "rgba(192,132,252,.18)"
+                  : "rgba(255,255,255,.05)",
             }}
           >
-            <Send size={18} />
-          </motion.button>
-        </div>
-
-        {/* =================================================
-            INSTRUCTION
-        ================================================= */}
-
-        <div className="
-          flex
-          justify-center
-          mt-2
-          pointer-events-none
-        ">
-          <span className="
-            text-[10px]
-            tracking-wide
-            text-violet-200/40
-          ">
-            {targetLocked
-              ? "Pull the scroll back and release"
-              : "Click the target where your message should land"}
-          </span>
+            <Send
+              size={17}
+              className={
+                loaded &&
+                targetLocked
+                  ? "text-violet-300"
+                  : "text-white/25"
+              }
+            />
+          </div>
         </div>
       </div>
     </div>

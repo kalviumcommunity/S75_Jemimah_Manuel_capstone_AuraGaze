@@ -28,6 +28,7 @@ export default function MessageCanvas({
   onFlyingComplete,
 }) {
   const localCanvasRef = useRef(null);
+  const innerCanvasRef = useRef(null);
 
   const [containerWidth, setContainerWidth] = useState(760);
 
@@ -78,8 +79,9 @@ export default function MessageCanvas({
     if (!magicMode) return;
 
     const canvas = localCanvasRef.current;
+    const innerCanvas = innerCanvasRef.current;
 
-    if (!canvas) return;
+    if (!canvas || !innerCanvas) return;
 
     const handlePointerMove = (event) => {
       /*
@@ -87,17 +89,21 @@ export default function MessageCanvas({
        */
       if (targetLocked) return;
 
-      const rect = canvas.getBoundingClientRect();
+      /*
+       * The target is rendered inside innerCanvas. Its bounding
+       * rect already reflects the outer container's scroll position,
+       * so this gives us inner-canvas coordinates without applying
+       * scrollTop a second time.
+       */
+      const rect = innerCanvas.getBoundingClientRect();
 
       const x =
         event.clientX -
-        rect.left +
-        canvas.scrollLeft;
+        rect.left;
 
       const y =
         event.clientY -
-        rect.top +
-        canvas.scrollTop;
+        rect.top;
 
       /*
        * Keep target inside the usable chat area.
@@ -105,12 +111,12 @@ export default function MessageCanvas({
       const padding = 30;
 
       const maxX = Math.max(
-        canvas.scrollWidth - padding,
+        innerCanvas.scrollWidth - padding,
         padding
       );
 
       const maxY = Math.max(
-        canvas.scrollHeight - padding,
+        innerCanvas.scrollHeight - padding,
         padding
       );
 
@@ -184,6 +190,8 @@ export default function MessageCanvas({
       "
     >
       <div
+        ref={innerCanvasRef}
+        data-magic-canvas
         className="
           relative
           w-full
@@ -261,6 +269,7 @@ export default function MessageCanvas({
               y={pos.y}
               rotate={pos.rotate}
               width={pos.width}
+              anchored={pos.anchored}
             />
           );
         })}

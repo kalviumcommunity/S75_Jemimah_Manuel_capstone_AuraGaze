@@ -4,150 +4,111 @@ import {
   useState,
 } from "react";
 
-const MAX_PULL = 95;
+const MAX_PULL = 105;
 
 export default function useSlingshotPhysics() {
-  const [
-    dragPosition,
-    setDragPosition,
-  ] = useState({
+  const [dragPosition, setDragPosition] = useState({
     x: 0,
     y: 0,
   });
 
-  const [
-    trajectory,
-    setTrajectory,
-  ] = useState([]);
+  const [trajectory, setTrajectory] = useState([]);
 
-  const [
-    isDragging,
-    setIsDragging,
-  ] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const startPoint =
-    useRef(null);
+  const startPointRef = useRef(null);
 
-  const beginDrag =
-    useCallback((point) => {
-      startPoint.current = point;
+  const beginDrag = useCallback((point) => {
+    startPointRef.current = {
+      x: point.x,
+      y: point.y,
+    };
 
-      setIsDragging(true);
+    setIsDragging(true);
 
-      setDragPosition({
-        x: 0,
-        y: 0,
+    setDragPosition({
+      x: 0,
+      y: 0,
+    });
+
+    setTrajectory([]);
+  }, []);
+
+  const updateDrag = useCallback((point) => {
+    const start = startPointRef.current;
+
+    if (!start) {
+      return;
+    }
+
+    let dx = point.x - start.x;
+    let dy = point.y - start.y;
+
+    const distance = Math.sqrt(
+      dx * dx + dy * dy
+    );
+
+    if (distance > MAX_PULL) {
+      const ratio = MAX_PULL / distance;
+
+      dx *= ratio;
+      dy *= ratio;
+    }
+
+    setDragPosition({
+      x: dx,
+      y: dy,
+    });
+
+    const points = [];
+
+    const launchX = -dx;
+    const launchY = -dy;
+
+    for (let i = 0; i < 18; i++) {
+      const t = i / 17;
+
+      points.push({
+        x: launchX * t,
+        y: launchY * t + 48 * t * t,
       });
+    }
 
-      setTrajectory([]);
-    }, []);
+    setTrajectory(points);
+  }, []);
 
-  const updateDrag =
-    useCallback((point) => {
-      if (!startPoint.current) {
-        return;
-      }
+  const releaseDrag = useCallback(() => {
+    const velocity = {
+      x: -dragPosition.x,
+      y: -dragPosition.y,
+    };
 
-      let dx =
-        point.x -
-        startPoint.current.x;
+    startPointRef.current = null;
 
-      let dy =
-        point.y -
-        startPoint.current.y;
+    setIsDragging(false);
 
-      const distance =
-        Math.sqrt(
-          dx * dx +
-            dy * dy
-        );
+    setTrajectory([]);
 
-      /*
-       * Limit pull distance.
-       */
-      if (
-        distance > MAX_PULL
-      ) {
-        const ratio =
-          MAX_PULL /
-          distance;
+    return velocity;
+  }, [dragPosition]);
 
-        dx *= ratio;
-        dy *= ratio;
-      }
+  const reset = useCallback(() => {
+    startPointRef.current = null;
 
-      setDragPosition({
-        x: dx,
-        y: dy,
-      });
+    setDragPosition({
+      x: 0,
+      y: 0,
+    });
 
-      /*
-       * Generate trajectory dots.
-       *
-       * The launch direction is opposite
-       * to the pull direction.
-       */
-      const points = [];
+    setTrajectory([]);
 
-      const launchX = -dx;
-      const launchY = -dy;
-
-      for (
-        let i = 0;
-        i < 14;
-        i++
-      ) {
-        const t = i / 13;
-
-        points.push({
-          x:
-            launchX * t,
-
-          y:
-            launchY * t +
-            55 * t * t,
-        });
-      }
-
-      setTrajectory(points);
-    }, []);
-
-  const releaseDrag =
-    useCallback(() => {
-      const velocity = {
-        x:
-          -dragPosition.x,
-
-        y:
-          -dragPosition.y,
-      };
-
-      setIsDragging(false);
-
-      setTrajectory([]);
-
-      return velocity;
-    }, [dragPosition]);
-
-  const reset =
-    useCallback(() => {
-      startPoint.current = null;
-
-      setDragPosition({
-        x: 0,
-        y: 0,
-      });
-
-      setTrajectory([]);
-
-      setIsDragging(false);
-    }, []);
+    setIsDragging(false);
+  }, []);
 
   return {
     dragPosition,
     trajectory,
     isDragging,
-
     beginDrag,
     updateDrag,
     releaseDrag,
