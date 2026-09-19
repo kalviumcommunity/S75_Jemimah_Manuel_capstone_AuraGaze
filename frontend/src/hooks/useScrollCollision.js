@@ -1,8 +1,31 @@
 import { useMemo } from "react";
 
-const MIN_TOP = 40;
-const GAP = 24;
-const DEFAULT_WIDTH = 220;
+// =============================================================
+// CONFIGURATION
+// =============================================================
+
+const MIN_TOP = 35;
+
+const GAP = 22;
+
+const SIDE_PADDING = 20;
+
+const MIN_WIDTH = 150;
+
+const MAX_WIDTH = 300;
+
+/*
+ * Minimum usable world height.
+ *
+ * This is NOT a huge scrolling world.
+ *
+ * The visible viewport is used first.
+ */
+const MIN_WORLD_HEIGHT = 560;
+
+// =============================================================
+// HELPERS
+// =============================================================
 
 function clamp(
   value,
@@ -15,6 +38,79 @@ function clamp(
   );
 }
 
+// =============================================================
+// STABLE HASH
+// =============================================================
+
+function hashString(value) {
+  const string =
+    String(value);
+
+  let hash =
+    2166136261;
+
+  for (
+    let i = 0;
+    i < string.length;
+    i++
+  ) {
+    hash ^=
+      string.charCodeAt(i);
+
+    hash =
+      Math.imul(
+        hash,
+        16777619
+      );
+  }
+
+  return (
+    hash >>> 0
+  );
+}
+
+// =============================================================
+// SEEDED RANDOM
+// =============================================================
+
+function seededRandom(
+  seed
+) {
+  let value =
+    seed >>> 0;
+
+  value +=
+    0x6D2B79F5;
+
+  value =
+    Math.imul(
+      value ^
+        (value >>> 15),
+      value | 1
+    );
+
+  value ^=
+    value +
+    Math.imul(
+      value ^
+        (value >>> 7),
+      value | 61
+    );
+
+  return (
+    (
+      value ^
+      (value >>> 14)
+    ) >>>
+      0
+  ) /
+    4294967296;
+}
+
+// =============================================================
+// RECTANGLE COLLISION
+// =============================================================
+
 function rectanglesOverlap(
   a,
   b
@@ -22,14 +118,21 @@ function rectanglesOverlap(
   return !(
     a.right + GAP <
       b.left ||
+
     a.left >
       b.right + GAP ||
+
     a.bottom + GAP <
       b.top ||
+
     a.top >
       b.bottom + GAP
   );
 }
+
+// =============================================================
+// MESSAGE HEIGHT
+// =============================================================
 
 function getMessageHeight(
   message,
@@ -40,13 +143,9 @@ function getMessageHeight(
       message?.text || ""
     );
 
-  /*
-   * Approximate line width.
-   */
-
   const charsPerLine =
     Math.max(
-      16,
+      15,
       Math.floor(
         width / 8
       )
@@ -72,7 +171,7 @@ function getMessageHeight(
       : 0;
 
   return Math.min(
-    260,
+    280,
     Math.max(
       58,
       34 +
@@ -83,87 +182,243 @@ function getMessageHeight(
   );
 }
 
-export default function useScrollCollision({
-  messages = [],
-  containerWidth = 720,
+// =============================================================
+// MESSAGE WIDTH
+// =============================================================
+
+function getMessageWidth(
+  message,
+  safeWidth
+) {
+  const desiredWidth =
+    message?.sender ===
+    "user"
+      ? 300
+      : 280;
+
+  return Math.min(
+    Math.max(
+      desiredWidth,
+      MIN_WIDTH
+    ),
+
+    Math.max(
+      safeWidth - 30,
+      MIN_WIDTH
+    ),
+
+    MAX_WIDTH
+  );
+}
+
+// =============================================================
+// FIND RANDOM FREE POSITION
+// =============================================================
+
+function findFreePosition({
+  seed,
+
+  safeWidth,
+
+  width,
+
+  height,
+
+  occupied,
+
+  visibleWorldHeight,
 }) {
-  return useMemo(() => {
-    const safeWidth =
+  /*
+   * ---------------------------------------------------------
+   * CURRENT VISIBLE SCREEN
+   * ---------------------------------------------------------
+   *
+   * AI should initially live ONLY here.
+   */
+
+  const usableHeight =
+    Math.max(
+      MIN_WORLD_HEIGHT,
+      visibleWorldHeight
+    );
+
+  const maxX =
+    Math.max(
+      SIDE_PADDING,
+      safeWidth -
+        width -
+        SIDE_PADDING
+    );
+
+  const maxY =
+    Math.max(
+      MIN_TOP,
+      usableHeight -
+        height -
+        SIDE_PADDING
+    );
+
+  /*
+   * ---------------------------------------------------------
+   * RANDOM STARTING POINT
+   * ---------------------------------------------------------
+   */
+
+  const randomX =
+    SIDE_PADDING +
+    seededRandom(
+      seed + 17
+    ) *
       Math.max(
-        containerWidth,
-        280
+        1,
+        maxX -
+          SIDE_PADDING
       );
 
-    const positions = [];
-
-    const occupied = [];
-
-    // =======================================================
-    // FREE POSITION FOR NORMAL / AI MESSAGES
-    // =======================================================
-
-    const findFreePosition = ({
-      preferredX,
-      preferredY,
-      width,
-      height,
-    }) => {
-      const maxX =
-        Math.max(
-          safeWidth -
-            width -
-            10,
-          10
-        );
-
-      const x =
-        clamp(
-          preferredX,
-          10,
-          maxX
-        );
-
-      let y =
-        Math.max(
-          preferredY,
+  const randomY =
+    MIN_TOP +
+    seededRandom(
+      seed + 43
+    ) *
+      Math.max(
+        1,
+        maxY -
           MIN_TOP
-        );
+      );
 
-      let candidate = {
-        left: x,
-        top: y,
-        right:
-          x + width,
-        bottom:
-          y + height,
-      };
+  const initialCandidate = {
+    left: clamp(
+      randomX,
+      SIDE_PADDING,
+      maxX
+    ),
 
-      let attempts = 0;
+    top: clamp(
+      randomY,
+      MIN_TOP,
+      maxY
+    ),
 
-      while (
-        occupied.some(
-          (rect) =>
-            rectanglesOverlap(
-              candidate,
-              rect
-            )
-        ) &&
-        attempts < 100
-      ) {
-        y += 35;
+    right: 0,
 
-        candidate = {
-          left: x,
-          top: y,
-          right:
-            x + width,
-          bottom:
-            y + height,
-        };
+    bottom: 0,
+  };
 
-        attempts++;
-      }
+  initialCandidate.right =
+    initialCandidate.left +
+    width;
 
+  initialCandidate.bottom =
+    initialCandidate.top +
+    height;
+
+  /*
+   * If the random position is already free,
+   * use it immediately.
+   */
+  const initialCollision =
+    occupied.some(
+      (rect) =>
+        rectanglesOverlap(
+          initialCandidate,
+          rect
+        )
+    );
+
+  if (!initialCollision) {
+    return {
+      x:
+        initialCandidate.left,
+
+      y:
+        initialCandidate.top,
+
+      width,
+
+      height,
+    };
+  }
+
+  // =========================================================
+  // SEARCH AROUND RANDOM LOCATION
+  // =========================================================
+
+  const startAngle =
+    seededRandom(
+      seed + 101
+    ) *
+    Math.PI *
+    2;
+
+  for (
+    let attempt = 1;
+    attempt <= 240;
+    attempt++
+  ) {
+    /*
+     * Gradually move farther away
+     * from the original random point.
+     */
+    const radius =
+      28 +
+      Math.floor(
+        attempt / 8
+      ) *
+        30;
+
+    const angle =
+      startAngle +
+      attempt *
+        0.77;
+
+    const candidateX =
+      clamp(
+        randomX +
+          Math.cos(angle) *
+            radius,
+
+        SIDE_PADDING,
+
+        maxX
+      );
+
+    const candidateY =
+      clamp(
+        randomY +
+          Math.sin(angle) *
+            radius,
+
+        MIN_TOP,
+
+        maxY
+      );
+
+    const candidate = {
+      left:
+        candidateX,
+
+      top:
+        candidateY,
+
+      right:
+        candidateX +
+        width,
+
+      bottom:
+        candidateY +
+        height,
+    };
+
+    const collision =
+      occupied.some(
+        (rect) =>
+          rectanglesOverlap(
+            candidate,
+            rect
+          )
+      );
+
+    if (!collision) {
       return {
         x:
           candidate.left,
@@ -172,13 +427,297 @@ export default function useScrollCollision({
           candidate.top,
 
         width,
+
         height,
       };
+    }
+  }
+
+  // =========================================================
+  // GRID FALLBACK
+  // =========================================================
+
+  /*
+   * If the screen is becoming crowded,
+   * scan the visible area for a free space.
+   */
+  const rowStep = 34;
+
+  const columnCount =
+    Math.max(
+      1,
+      Math.floor(
+        safeWidth /
+          90
+      )
+    );
+
+  for (
+    let row = 0;
+    row <
+    Math.ceil(
+      usableHeight /
+        rowStep
+    );
+    row++
+  ) {
+    const y =
+      MIN_TOP +
+      row * rowStep;
+
+    if (
+      y + height >
+      usableHeight
+    ) {
+      break;
+    }
+
+    for (
+      let column = 0;
+      column <
+      columnCount;
+      column++
+    ) {
+      const columnSeed =
+        seed +
+        row * 7919 +
+        column * 104729;
+
+      const x =
+        SIDE_PADDING +
+        seededRandom(
+          columnSeed
+        ) *
+          Math.max(
+            1,
+            maxX -
+              SIDE_PADDING
+          );
+
+      const candidate = {
+        left: clamp(
+          x,
+          SIDE_PADDING,
+          maxX
+        ),
+
+        top: y,
+
+        right:
+          clamp(
+            x,
+            SIDE_PADDING,
+            maxX
+          ) + width,
+
+        bottom:
+          y + height,
+      };
+
+      const collision =
+        occupied.some(
+          (rect) =>
+            rectanglesOverlap(
+              candidate,
+              rect
+            )
+        );
+
+      if (!collision) {
+        return {
+          x:
+            candidate.left,
+
+          y:
+            candidate.top,
+
+          width,
+
+          height,
+        };
+      }
+    }
+  }
+
+  // =========================================================
+  // SCREEN IS FULL
+  // =========================================================
+
+  /*
+   * At this point we intentionally allow the world
+   * to expand downward.
+   *
+   * This is what creates the "scroll down when filled"
+   * behavior.
+   */
+
+  const expandedHeight =
+    usableHeight +
+    260 +
+    occupied.length * 35;
+
+  const expandedMaxY =
+    Math.max(
+      MIN_TOP,
+      expandedHeight -
+        height -
+        SIDE_PADDING
+    );
+
+  for (
+    let attempt = 1;
+    attempt <= 180;
+    attempt++
+  ) {
+    const x =
+      SIDE_PADDING +
+      seededRandom(
+        seed +
+          5000 +
+          attempt
+      ) *
+        Math.max(
+          1,
+          maxX -
+            SIDE_PADDING
+        );
+
+    const y =
+      usableHeight -
+      60 +
+      seededRandom(
+        seed +
+          8000 +
+          attempt
+      ) *
+        Math.max(
+          1,
+          expandedMaxY -
+            usableHeight +
+            60
+        );
+
+    const candidate = {
+      left: clamp(
+        x,
+        SIDE_PADDING,
+        maxX
+      ),
+
+      top: clamp(
+        y,
+        usableHeight -
+          60,
+        expandedMaxY
+      ),
+
+      right:
+        clamp(
+          x,
+          SIDE_PADDING,
+          maxX
+        ) + width,
+
+      bottom:
+        clamp(
+          y,
+          usableHeight -
+            60,
+          expandedMaxY
+        ) + height,
     };
 
-    // =======================================================
+    const collision =
+      occupied.some(
+        (rect) =>
+          rectanglesOverlap(
+            candidate,
+            rect
+          )
+      );
+
+    if (!collision) {
+      return {
+        x:
+          candidate.left,
+
+        y:
+          candidate.top,
+
+        width,
+
+        height,
+      };
+    }
+  }
+
+  /*
+   * Last-resort placement.
+   */
+  return {
+    x:
+      SIDE_PADDING,
+
+    y:
+      expandedHeight -
+      height -
+      SIDE_PADDING,
+
+    width,
+
+    height,
+  };
+}
+
+// =============================================================
+// HOOK
+// =============================================================
+
+export default function useScrollCollision({
+  messages = [],
+
+  containerWidth = 720,
+
+  containerHeight = 600,
+
+  bottomSafeZone = 225,
+}) {
+  return useMemo(() => {
+    const safeWidth =
+      Math.max(
+        containerWidth,
+        280
+      );
+
+    /*
+     * ---------------------------------------------------------
+     * VISIBLE WORLD
+     * ---------------------------------------------------------
+     *
+     * This is the important part.
+     *
+     * AI messages first use the screen the user is
+     * currently looking at.
+     */
+    const visibleWorldHeight =
+      Math.max(
+        MIN_WORLD_HEIGHT,
+
+        containerHeight -
+          bottomSafeZone -
+          30
+      );
+
+    const positions = [];
+
+    const occupied = [];
+
+    let maxBottom =
+      visibleWorldHeight;
+
+    // =========================================================
     // EVERY MESSAGE
-    // =======================================================
+    // =========================================================
 
     messages.forEach(
       (
@@ -203,22 +742,15 @@ export default function useScrollCollision({
             )
           );
 
-        /*
-         * User bubbles are slightly narrower than
-         * before, which makes them look more like
-         * WhatsApp / Instagram.
-         */
+        const id =
+          message?.id ??
+          message?._id ??
+          `message-${index}`;
 
         const width =
-          Math.min(
-            isUser
-              ? 300
-              : 280,
-
-            Math.max(
-              safeWidth - 24,
-              150
-            )
+          getMessageWidth(
+            message,
+            safeWidth
           );
 
         const height =
@@ -228,24 +760,15 @@ export default function useScrollCollision({
           );
 
         // =====================================================
-        // TARGETED USER MESSAGE
+        // USER TARGET MESSAGE
         // =====================================================
 
         if (hasTarget) {
           /*
-           * IMPORTANT:
+           * User target is ALWAYS exact.
            *
-           * x/y represent the CENTER.
-           *
-           * ScrollMessage will use:
-           *
-           * transform:
-           * translate(-50%, -50%)
-           *
-           * Therefore the bubble center is exactly
-           * target.x / target.y.
+           * x/y = center.
            */
-
           const centerX =
             Number(
               message.target.x
@@ -257,14 +780,13 @@ export default function useScrollCollision({
             );
 
           positions.push({
-            id:
-              message.id ??
-              message._id ??
-              `message-${index}`,
+            id,
 
-            x: centerX,
+            x:
+              centerX,
 
-            y: centerY,
+            y:
+              centerY,
 
             width,
 
@@ -276,11 +798,9 @@ export default function useScrollCollision({
           });
 
           /*
-           * Occupied rectangle is only used so that
-           * future AI messages know this area exists.
+           * Reserve the area.
            */
-
-          occupied.push({
+          const rect = {
             left:
               centerX -
               width / 2,
@@ -296,57 +816,57 @@ export default function useScrollCollision({
             bottom:
               centerY +
               height / 2,
-          });
+          };
+
+          occupied.push(
+            rect
+          );
+
+          maxBottom =
+            Math.max(
+              maxBottom,
+              rect.bottom
+            );
 
           return;
         }
 
         // =====================================================
-        // NORMAL / AI MESSAGE
+        // RANDOM AI / NORMAL MESSAGE
         // =====================================================
 
-        const isAI =
-          message?.sender ===
-          "ai";
-
-        const preferredX =
-          isAI
-            ? 20
-            : safeWidth -
-              width -
-              20;
-
-        const preferredY =
-          positions.reduce(
-            (
-              max,
-              position
-            ) =>
-              Math.max(
-                max,
-                position.y +
-                  (position.anchored
-                    ? position.height /
-                      2
-                    : position.height) +
-                  45
-              ),
-            MIN_TOP
+        const seed =
+          hashString(
+            `${id}|${message?.sender}|${message?.timestamp}|${message?.text}`
           );
 
         const result =
           findFreePosition({
-            preferredX,
-            preferredY,
+            seed,
+
+            safeWidth,
+
             width,
+
             height,
+
+            occupied,
+
+            visibleWorldHeight,
           });
 
+        const rotationSeed =
+          seededRandom(
+            seed + 777
+          );
+
+        const rotate =
+          -1.5 +
+          rotationSeed *
+            3;
+
         positions.push({
-          id:
-            message.id ??
-            message._id ??
-            `message-${index}`,
+          id,
 
           x:
             result.x,
@@ -360,14 +880,7 @@ export default function useScrollCollision({
           height:
             result.height,
 
-          rotate:
-            isAI
-              ? index % 3 === 0
-                ? -0.6
-                : 0.5
-              : index % 2 === 0
-              ? -1
-              : 1,
+          rotate,
 
           anchored: false,
         });
@@ -387,51 +900,43 @@ export default function useScrollCollision({
             result.y +
             result.height,
         });
+
+        maxBottom =
+          Math.max(
+            maxBottom,
+
+            result.y +
+              result.height
+          );
       }
     );
 
-    // =======================================================
-    // CANVAS HEIGHT
-    // =======================================================
+    // =========================================================
+    // WORLD HEIGHT
+    // =========================================================
 
+    /*
+     * Do NOT create a giant world immediately.
+     *
+     * The world is only as tall as it needs to be.
+     */
     const totalHeight =
       Math.max(
-        700,
+        visibleWorldHeight,
 
-        positions.reduce(
-          (
-            max,
-            position
-          ) => {
-            if (
-              position.anchored
-            ) {
-              return Math.max(
-                max,
-                position.y +
-                  position.height /
-                    2 +
-                  140
-              );
-            }
-
-            return Math.max(
-              max,
-              position.y +
-                position.height +
-                140
-            );
-          },
-          700
-        )
+        maxBottom +
+          100
       );
 
     return {
       positions,
+
       totalHeight,
     };
   }, [
     messages,
     containerWidth,
+    containerHeight,
+    bottomSafeZone,
   ]);
 }

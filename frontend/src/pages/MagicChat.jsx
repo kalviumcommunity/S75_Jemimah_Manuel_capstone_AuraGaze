@@ -5,9 +5,7 @@ import {
   useState,
 } from "react";
 
-import {
-  useNavigate,
-} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import MessageCanvas from "../components/chat/MagicChat/MessageCanvas";
 import SlingshotInput from "../components/chat/MagicChat/SlingshotInput";
@@ -20,181 +18,139 @@ import {
 } from "../services/chatService";
 
 export default function MagicChat() {
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
 
   // =========================================================
   // REFS
   // =========================================================
 
-  const canvasRef =
-    useRef(null);
+  const canvasRef = useRef(null);
 
   // =========================================================
   // BASIC STATE
   // =========================================================
 
-  const [
-    loading,
-    setLoading,
-  ] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [
-    error,
-    setError,
-  ] = useState("");
-
-  const [
-    friend,
-    setFriend,
-  ] = useState({
+  const [friend, setFriend] = useState({
     name: "",
     image: "",
   });
 
-  const [
-    messages,
-    setMessages,
-  ] = useState([]);
+  const [messages, setMessages] = useState([]);
 
-  const [
-    typing,
-    setTyping,
-  ] = useState(false);
+  const [typing, setTyping] = useState(false);
 
   // =========================================================
   // TARGET
-  //
-  // IMPORTANT:
-  // target.x/y are RELATIVE TO THE INNER MAGIC CANVAS.
   // =========================================================
 
-  const [
-    target,
-    setTarget,
-  ] = useState({
+  const [target, setTarget] = useState({
     x: 360,
     y: 350,
   });
 
-  const [
-    targetLocked,
-    setTargetLocked,
-  ] = useState(false);
+  const [targetLocked, setTargetLocked] = useState(false);
 
   // =========================================================
   // FLYING SCROLL
   // =========================================================
 
-  const [
-    flyingScroll,
-    setFlyingScroll,
-  ] = useState(null);
+  const [flyingScroll, setFlyingScroll] = useState(null);
 
   // =========================================================
-  // LOAD FRIEND + HISTORY
+  // LOAD FRIEND + CHAT HISTORY
   // =========================================================
 
   useEffect(() => {
     let mounted = true;
 
-    const load =
-      async () => {
-        try {
-          setLoading(true);
-          setError("");
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-          const friendData =
-            await getFriend();
+        const friendData = await getFriend();
 
-          if (!mounted) {
-            return;
-          }
-
-          setFriend({
-            name:
-              friendData
-                ?.friend
-                ?.name ||
-              "Friend",
-
-            image:
-              friendData
-                ?.friend
-                ?.image ||
-              "",
-          });
-
-          const history =
-            await getHistory();
-
-          if (!mounted) {
-            return;
-          }
-
-          /*
-           * Convert backend messages into
-           * Magic Chat messages.
-           */
-
-          const formatted =
-            (
-              history || []
-            ).map(
-              (msg) => ({
-                id:
-                  msg._id ||
-                  msg.id,
-
-                sender:
-                  msg.sender,
-
-                text:
-                  msg.message ||
-                  msg.text ||
-                  "",
-
-                attachments:
-                  msg.attachments ||
-                  [],
-
-                timestamp:
-                  msg.createdAt ||
-                  msg.timestamp ||
-                  new Date().toISOString(),
-
-                target:
-                  msg.target ||
-                  null,
-              })
-            );
-
-          setMessages(
-            formatted
-          );
-        } catch (err) {
-          console.error(
-            "Magic Chat load error:",
-            err
-          );
-
-          if (!mounted) {
-            return;
-          }
-
-          setError(
-            err?.response
-              ?.data
-              ?.message ||
-              err?.message ||
-              "Unable to load Magic Chat."
-          );
-        } finally {
-          if (mounted) {
-            setLoading(false);
-          }
+        if (!mounted) {
+          return;
         }
-      };
+
+        setFriend({
+          name:
+            friendData?.friend?.name ||
+            "Friend",
+
+          image:
+            friendData?.friend?.image ||
+            "",
+        });
+
+        const history = await getHistory();
+
+        if (!mounted) {
+          return;
+        }
+
+        const formatted = (history || []).map(
+          (msg) => ({
+            id:
+              msg._id ||
+              msg.id,
+
+            sender:
+              msg.sender,
+
+            text:
+              msg.message ||
+              msg.text ||
+              "",
+
+            attachments:
+              msg.attachments ||
+              [],
+
+            timestamp:
+              msg.createdAt ||
+              msg.timestamp ||
+              new Date().toISOString(),
+
+            /*
+             * User messages sent through Magic Chat
+             * contain their target.
+             *
+             * Old messages without a target
+             * will receive a random position.
+             */
+            target:
+              msg.target ||
+              null,
+          })
+        );
+
+        setMessages(formatted);
+      } catch (err) {
+        console.error(
+          "Magic Chat load error:",
+          err
+        );
+
+        if (!mounted) {
+          return;
+        }
+
+        setError(
+          err?.response?.data?.message ||
+            err?.message ||
+            "Unable to load Magic Chat."
+        );
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
 
     load();
 
@@ -207,65 +163,51 @@ export default function MagicChat() {
   // TARGET MOVEMENT
   // =========================================================
 
-  const handleTargetChange =
-    useCallback(
-      (position) => {
-        if (
-          targetLocked ||
-          flyingScroll?.visible
-        ) {
-          return;
-        }
-
-        setTarget({
-          x: position.x,
-          y: position.y,
-        });
-      },
-      [
-        targetLocked,
-        flyingScroll,
-      ]
-    );
-
-  // =========================================================
-  // TARGET LOCK
-  // =========================================================
-
-  const handleTargetLock =
-    useCallback(() => {
+  const handleTargetChange = useCallback(
+    (position) => {
       if (
+        targetLocked ||
         flyingScroll?.visible
       ) {
         return;
       }
 
-      setTargetLocked(
-        (previous) =>
-          !previous
-      );
-    }, [
+      setTarget({
+        x: position.x,
+        y: position.y,
+      });
+    },
+    [
+      targetLocked,
       flyingScroll,
-    ]);
+    ]
+  );
 
   // =========================================================
-  // CALCULATE SLINGSHOT START
-  //
-  // Converts the slingshot's viewport center
-  // into INNER CANVAS coordinates.
+  // TARGET LOCK
+  // =========================================================
+
+  const handleTargetLock = useCallback(() => {
+    if (flyingScroll?.visible) {
+      return;
+    }
+
+    setTargetLocked(
+      (previous) => !previous
+    );
+  }, [flyingScroll]);
+
+  // =========================================================
+  // CALCULATE SLINGSHOT POSITION
   // =========================================================
 
   const getSlingshotPosition =
     useCallback(
-      (
-        slingshotElement
-      ) => {
+      (slingshotElement) => {
         const outerCanvas =
           canvasRef.current;
 
-        if (
-          !outerCanvas
-        ) {
+        if (!outerCanvas) {
           return {
             x: 360,
             y: 650,
@@ -277,9 +219,7 @@ export default function MagicChat() {
             "[data-magic-canvas]"
           );
 
-        if (
-          !innerCanvas
-        ) {
+        if (!innerCanvas) {
           return {
             x:
               outerCanvas.clientWidth /
@@ -295,35 +235,26 @@ export default function MagicChat() {
         const canvasRect =
           innerCanvas.getBoundingClientRect();
 
-        /*
-         * Use the actual slingshot element.
-         */
-
-        if (
-          slingshotElement
-        ) {
+        if (slingshotElement) {
           const slingRect =
             slingshotElement.getBoundingClientRect();
 
           return {
             x:
               slingRect.left +
-              slingRect.width /
-                2 -
+              slingRect.width / 2 -
               canvasRect.left,
 
             y:
               slingRect.top +
-              slingRect.height *
-                0.42 -
+              slingRect.height * 0.42 -
               canvasRect.top,
           };
         }
 
         return {
           x:
-            innerCanvas.clientWidth /
-            2,
+            innerCanvas.clientWidth / 2,
 
           y:
             outerCanvas.scrollTop +
@@ -338,81 +269,75 @@ export default function MagicChat() {
   // LAUNCH
   // =========================================================
 
-  const handleLaunch =
-    useCallback(
-      async ({
-        text,
-        velocity,
-        slingshotElement,
-      }) => {
-        if (
-          !text?.trim() ||
-          !targetLocked ||
-          flyingScroll?.visible
-        ) {
-          return;
-        }
+  const handleLaunch = useCallback(
+    async ({
+      text,
+      velocity,
+      slingshotElement,
+    }) => {
+      if (
+        !text?.trim() ||
+        !targetLocked ||
+        flyingScroll?.visible
+      ) {
+        return;
+      }
 
-        /*
-         * Freeze target at the exact moment
-         * the user releases the paper.
-         */
+      /*
+       * Freeze the exact target at release time.
+       */
+      const lockedTarget = {
+        x: target.x,
+        y: target.y,
+      };
 
-        const lockedTarget = {
-          x: target.x,
-          y: target.y,
-        };
-
-        /*
-         * Get the exact launch origin
-         * in the SAME coordinate system.
-         */
-
-        const start =
-          getSlingshotPosition(
-            slingshotElement
-          );
-
-        console.log(
-          "MAGIC LAUNCH",
-          {
-            start,
-            target:
-              lockedTarget,
-          }
+      /*
+       * Calculate the launch point in the
+       * SAME coordinate system as the target.
+       */
+      const start =
+        getSlingshotPosition(
+          slingshotElement
         );
 
-        setFlyingScroll({
-          visible: true,
-
+      console.log(
+        "MAGIC LAUNCH",
+        {
           start,
+          target: lockedTarget,
+        }
+      );
 
-          target:
-            lockedTarget,
+      setFlyingScroll({
+        visible: true,
 
-          text:
-            text.trim(),
+        start,
 
-          velocity,
+        target:
+          lockedTarget,
 
-          duration:
-            1.15,
+        text:
+          text.trim(),
 
-          rotation:
-            velocity?.x >= 0
-              ? 720
-              : -720,
+        velocity,
 
-          scale: 1,
-        });
-      },
-      [
-        target,
-        targetLocked,
-        flyingScroll,
-        getSlingshotPosition,
-      ]
-    );
+        duration: 1.15,
+
+        rotation:
+          velocity?.x >= 0
+            ? 720
+            : -720,
+
+        scale: 1,
+      });
+    },
+    [
+      target,
+      targetLocked,
+      flyingScroll,
+      getSlingshotPosition,
+    ]
+  );
 
   // =========================================================
   // FLYING PAPER COMPLETED
@@ -421,9 +346,7 @@ export default function MagicChat() {
   const handleFlyingComplete =
     useCallback(
       async () => {
-        if (
-          !flyingScroll
-        ) {
+        if (!flyingScroll) {
           return;
         }
 
@@ -438,12 +361,7 @@ export default function MagicChat() {
          * TEMP USER MESSAGE
          * ====================================================
          *
-         * IMPORTANT:
-         *
-         * target.x/y are ALREADY in the INNER CANVAS
-         * coordinate system.
-         *
-         * DO NOT subtract canvas.left again.
+         * x/y = exact CENTER of the target.
          */
 
         const tempId =
@@ -461,10 +379,6 @@ export default function MagicChat() {
           timestamp:
             new Date().toISOString(),
 
-          /*
-           * EXACT CENTER TARGET
-           */
-
           target: {
             x:
               landingTarget.x,
@@ -475,9 +389,8 @@ export default function MagicChat() {
         };
 
         /*
-         * Add message immediately.
+         * Add user message immediately.
          */
-
         setMessages(
           (previous) => [
             ...previous,
@@ -488,35 +401,36 @@ export default function MagicChat() {
         /*
          * Remove flying paper.
          */
-
-        setFlyingScroll(
-          null
-        );
+        setFlyingScroll(null);
 
         /*
-         * Target is available
-         * again.
+         * Allow another target.
          */
-
-        setTargetLocked(
-          false
-        );
+        setTargetLocked(false);
 
         /*
-         * AI typing.
+         * AI starts thinking.
          */
-
         setTyping(true);
 
         try {
+          // ===================================================
+          // SEND TO BACKEND
+          // ===================================================
+
           const response =
             await sendMessageToAI(
               text,
               []
             );
 
+          console.log(
+            "MAGIC CHAT AI RESPONSE:",
+            response
+          );
+
           // ===================================================
-          // BACKEND USER ID
+          // UPDATE TEMP USER ID
           // ===================================================
 
           if (
@@ -525,9 +439,7 @@ export default function MagicChat() {
             setMessages(
               (previous) =>
                 previous.map(
-                  (
-                    message
-                  ) =>
+                  (message) =>
                     message.id ===
                     tempId
                       ? {
@@ -537,9 +449,8 @@ export default function MagicChat() {
                             response.userMessageId,
 
                           /*
-                           * NEVER lose target.
+                           * NEVER lose the target.
                            */
-
                           target: {
                             x:
                               landingTarget.x,
@@ -554,7 +465,7 @@ export default function MagicChat() {
           }
 
           // ===================================================
-          // AI REPLIES
+          // NORMALIZE AI REPLIES
           // ===================================================
 
           const replies =
@@ -562,13 +473,35 @@ export default function MagicChat() {
               response?.reply
             )
               ? response.reply
-              : [
-                  response?.reply,
-                ].filter(Boolean);
+              : response?.reply
+              ? [response.reply]
+              : [];
 
           const aiIds =
-            response?.aiMessageIds ||
-            [];
+            Array.isArray(
+              response?.aiMessageIds
+            )
+              ? response.aiMessageIds
+              : [];
+
+          /*
+           * If backend somehow returns no reply,
+           * don't leave the user thinking the app is frozen.
+           */
+          if (replies.length === 0) {
+            console.warn(
+              "Magic Chat received no AI reply.",
+              response
+            );
+
+            setTyping(false);
+
+            return;
+          }
+
+          // ===================================================
+          // SHOW AI REPLIES
+          // ===================================================
 
           for (
             let i = 0;
@@ -576,18 +509,25 @@ export default function MagicChat() {
             i++
           ) {
             const reply =
-              replies[i];
+              String(
+                replies[i] ?? ""
+              ).trim();
 
+            if (!reply) {
+              continue;
+            }
+
+            /*
+             * Small natural delay.
+             */
             await new Promise(
               (resolve) =>
                 setTimeout(
                   resolve,
-
                   Math.min(
                     700 +
                       reply.length *
                         18,
-
                     2000
                   )
                 )
@@ -595,6 +535,15 @@ export default function MagicChat() {
 
             setTyping(false);
 
+            /*
+             * IMPORTANT:
+             *
+             * AI does NOT receive a target.
+             *
+             * useScrollCollision.js will therefore
+             * give the AI message its own stable random
+             * location.
+             */
             setMessages(
               (previous) => [
                 ...previous,
@@ -604,32 +553,30 @@ export default function MagicChat() {
                     aiIds[i] ||
                     `magic-ai-${Date.now()}-${i}`,
 
-                  sender:
-                    "ai",
+                  sender: "ai",
 
-                  text:
-                    reply,
+                  text: reply,
 
-                  attachments:
-                    [],
+                  attachments: [],
 
                   timestamp:
                     new Date().toISOString(),
 
-                  target:
-                    null,
+                  target: null,
                 },
               ]
             );
 
+            /*
+             * If backend split the answer into multiple
+             * messages, show typing again before the
+             * next one.
+             */
             if (
               i <
-              replies.length -
-                1
+              replies.length - 1
             ) {
-              setTyping(
-                true
-              );
+              setTyping(true);
             }
           }
         } catch (err) {
@@ -638,6 +585,12 @@ export default function MagicChat() {
             err
           );
 
+          setTyping(false);
+
+          /*
+           * Error messages are also random-position
+           * messages because they have no target.
+           */
           setMessages(
             (previous) => [
               ...previous,
@@ -646,20 +599,17 @@ export default function MagicChat() {
                 id:
                   `magic-error-${Date.now()}`,
 
-                sender:
-                  "ai",
+                sender: "ai",
 
                 text:
                   "Sorry 😭 Something went wrong. Please try again.",
 
-                attachments:
-                  [],
+                attachments: [],
 
                 timestamp:
                   new Date().toISOString(),
 
-                target:
-                  null,
+                target: null,
               },
             ]
           );
@@ -667,9 +617,7 @@ export default function MagicChat() {
           setTyping(false);
         }
       },
-      [
-        flyingScroll,
-      ]
+      [flyingScroll]
     );
 
   // =========================================================
@@ -688,26 +636,32 @@ export default function MagicChat() {
           bg-[#090414]
         "
       >
-        <div className="
-          flex
-          flex-col
-          items-center
-          gap-4
-        ">
-          <div className="
-            h-12
-            w-12
-            rounded-full
-            border-4
-            border-violet-500
-            border-t-transparent
-            animate-spin
-          " />
+        <div
+          className="
+            flex
+            flex-col
+            items-center
+            gap-4
+          "
+        >
+          <div
+            className="
+              h-12
+              w-12
+              rounded-full
+              border-4
+              border-violet-500
+              border-t-transparent
+              animate-spin
+            "
+          />
 
-          <p className="
-            text-white/80
-            text-lg
-          ">
+          <p
+            className="
+              text-white/80
+              text-lg
+            "
+          >
             Preparing Magic Chat...
           </p>
         </div>
@@ -732,28 +686,34 @@ export default function MagicChat() {
           px-6
         "
       >
-        <div className="
-          max-w-md
-          text-center
-          rounded-3xl
-          border
-          border-white/10
-          bg-white/5
-          backdrop-blur-xl
-          p-8
-        ">
-          <h1 className="
-            text-2xl
-            text-white
-            font-semibold
-            mb-3
-          ">
+        <div
+          className="
+            max-w-md
+            text-center
+            rounded-3xl
+            border
+            border-white/10
+            bg-white/5
+            backdrop-blur-xl
+            p-8
+          "
+        >
+          <h1
+            className="
+              text-2xl
+              text-white
+              font-semibold
+              mb-3
+            "
+          >
             Magic Chat couldn't load
           </h1>
 
-          <p className="
-            text-white/60
-          ">
+          <p
+            className="
+              text-white/60
+            "
+          >
             {error}
           </p>
         </div>
@@ -781,11 +741,13 @@ export default function MagicChat() {
           HEADER
       ===================================================== */}
 
-      <div className="
-        relative
-        z-[600]
-        shrink-0
-      ">
+      <div
+        className="
+          relative
+          z-[600]
+          shrink-0
+        "
+      >
         <ChatHeader
           friend={friend}
           status="Online"
@@ -804,31 +766,23 @@ export default function MagicChat() {
           MAGIC CANVAS
       ===================================================== */}
 
-      <div className="
-        relative
-        flex-1
-        min-h-0
-        z-10
-      ">
+      <div
+        className="
+          relative
+          flex-1
+          min-h-0
+          z-10
+        "
+      >
         <MessageCanvas
-          messages={
-            messages
-          }
-          friend={
-            friend
-          }
-          typing={
-            typing
-          }
+          messages={messages}
+          friend={friend}
+          typing={typing}
           scrollContainerRef={
             canvasRef
           }
-          magicMode={
-            true
-          }
-          target={
-            target
-          }
+          magicMode={true}
+          target={target}
           targetLocked={
             targetLocked
           }
@@ -851,13 +805,15 @@ export default function MagicChat() {
           SLINGSHOT INPUT
       ===================================================== */}
 
-      <div className="
-        absolute
-        bottom-0
-        left-0
-        right-0
-        z-[700]
-      ">
+      <div
+        className="
+          absolute
+          bottom-0
+          left-0
+          right-0
+          z-[700]
+        "
+      >
         <SlingshotInput
           targetLocked={
             targetLocked
