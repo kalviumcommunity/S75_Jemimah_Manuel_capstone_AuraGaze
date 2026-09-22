@@ -14,6 +14,23 @@ const connectDB = async () => {
     });
 
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+
+    // One-time safety cleanup:
+    // Remove any leftover explicit googleId: null values from old signups
+    // so that the sparse unique index works correctly.
+    try {
+      const result = await conn.connection
+        .collection("users")
+        .updateMany({ googleId: null }, { $unset: { googleId: "" } });
+
+      if (result.modifiedCount > 0) {
+        console.log(
+          `🔧 Cleaned up ${result.modifiedCount} user(s) with googleId: null`
+        );
+      }
+    } catch (cleanupErr) {
+      console.warn("⚠️ googleId cleanup skipped:", cleanupErr.message);
+    }
   } catch (error) {
     console.error("❌ MongoDB connection failed:", error.message);
     process.exit(1);
