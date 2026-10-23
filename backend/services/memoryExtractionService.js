@@ -1,5 +1,5 @@
-const { getGeminiClient } = require("../config/gemini");
 const memoryExtraction = require("../personality/memoryExtraction");
+const { generateWithFallback } = require("./providerOrchestrator");
 
 async function extractMemory({
   userMessage,
@@ -33,42 +33,32 @@ LATEST USER MESSAGE
 ${userMessage}
 `;
 
-    // --------------------------------------
-    // Ask Gemini
-    // --------------------------------------
-
-    const ai = getGeminiClient();
-
-    const response = await ai.models.generateContent({
-      model: "gemini-flash-latest",
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: prompt },
-          ],
-        },
-      ],
+    const result = await generateWithFallback({
+      prompt,
+      recoveryText: "",
     });
 
-    let text = response.text || "";
+    if (result.recovered) {
+      return { shouldRemember: false };
+    }
 
-    text = text
+    const text = result.text
       .replace(/```json/g, "")
       .replace(/```/g, "")
       .trim();
 
     try {
       return JSON.parse(text);
-    } catch (parseError) {
-      console.error("Memory JSON Parse Error:", parseError);
-      console.error("Gemini Response:");
-      console.error(text);
+    } catch {
+      console.error("Memory extraction returned invalid JSON.");
       return { shouldRemember: false };
     }
 
   } catch (error) {
-    console.error("Memory Extraction Error:", error);
+    console.error(
+      "Memory extraction failed:",
+      error?.name || "unexpected_error"
+    );
     return { shouldRemember: false };
   }
 }

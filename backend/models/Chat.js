@@ -39,6 +39,17 @@ const chatSchema = new mongoose.Schema({
     required: true,
   },
 
+  replyTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Chat",
+    default: null,
+  },
+
+  isRecovery: {
+    type: Boolean,
+    default: false,
+  },
+
   // No longer strictly required — a message can now be
   // attachment-only with no caption text (Part 5). The
   // controller still enforces that at least one of

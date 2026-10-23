@@ -1,7 +1,8 @@
 const Chat = require("../models/Chat");
 const User = require("../models/user");
+const mongoose = require("mongoose");
 
-const { generateReply, FALLBACK_REPLY } = require("../services/aiService");
+const { generateReplyWithStatus } = require("../services/aiService");
 const runScheduler = require("../services/scheduler");
 const sendFirstMessageIfNeeded = require("../services/scheduler/firstMessage");
 
@@ -33,15 +34,18 @@ const {
 // ==========================================
 
 const sendMessage = async (req, res) => {
+  let savedUserMessage;
+
   try {
     const userId = req.user.userId;
     const { userMessage } = req.body;
+    const retryUserMessageId = req.body.retryUserMessageId;
 
     const text = (userMessage || "").trim();
 
     const files = req.files || [];
 
-    if (!text && files.length === 0) {
+    if (!text && files.length === 0 && !retryUserMessageId) {
       return res.status(400).json({
         message: "Message or attachment is required.",
       });
@@ -62,16 +66,69 @@ const sendMessage = async (req, res) => {
       size: file.size,
     }));
 
-    // Kept as a variable now (not a bare await) so we can return
-    // its real _id to the frontend — needed for edit/delete to
-    // work on a message during the same session it was sent in.
-    const savedUserMessage = await Chat.create({
-      user: userId,
-      sender: "user",
-      message: text,
-      attachments,
-      messageType: "CHAT",
-    });
+    if (retryUserMessageId) {
+      if (!mongoose.isValidObjectId(retryUserMessageId)) {
+        return res.status(400).json({
+          message: "Invalid message to retry.",
+        });
+      }
+
+      if (files.length > 0) {
+        return res.status(400).json({
+          message: "A retry cannot include new attachments.",
+        });
+      }
+
+      savedUserMessage = await Chat.findOne({
+        _id: retryUserMessageId,
+        user: userId,
+        sender: "user",
+      });
+
+      if (!savedUserMessage) {
+        return res.status(404).json({
+          message: "Message to retry was not found.",
+        });
+      }
+
+      const existingReplies = await Chat.find({
+        user: userId,
+        sender: "ai",
+        replyTo: savedUserMessage._id,
+        isRecovery: false,
+      }).sort({ createdAt: 1 });
+
+      if (existingReplies.length > 0) {
+        return res.status(200).json({
+          reply: existingReplies.map((reply) => reply.message),
+          conversationState: detectConversationState(
+            savedUserMessage.message ||
+              (savedUserMessage.attachments?.length
+                ? "[The user sent an attachment]"
+                : "")
+          ),
+          userMessageId: savedUserMessage._id,
+          aiMessageIds: existingReplies.map((reply) => reply._id),
+          replyStatus: "generated",
+        });
+      }
+
+      await Chat.deleteMany({
+        user: userId,
+        sender: "ai",
+        replyTo: savedUserMessage._id,
+        isRecovery: true,
+      });
+    } else {
+      // Keep the persisted ID for frontend edit/delete actions.
+      savedUserMessage = await Chat.create({
+        user: userId,
+        sender: "user",
+        message: text,
+        attachments,
+        messageType: "CHAT",
+      });
+    }
 
     let chatHistory = await Chat.find({
       user: userId,
@@ -83,11 +140,15 @@ const sendMessage = async (req, res) => {
 
     const relationship = await getRelationship(userId);
 
-    const textForAI = text || "[The user sent an attachment]";
+    const textForAI =
+      savedUserMessage.message ||
+      (savedUserMessage.attachments?.length
+        ? "[The user sent an attachment]"
+        : text);
 
     const conversationState = detectConversationState(textForAI);
 
-    const aiReply = await generateReply({
+    const generation = await generateReplyWithStatus({
       userMessage: textForAI,
       userProfile: user,
       chatHistory,
@@ -96,7 +157,8 @@ const sendMessage = async (req, res) => {
       conversationState,
     });
 
-    const replyFailed = aiReply === FALLBACK_REPLY;
+    const aiReply = generation.text;
+    const replyFailed = generation.recovered;
     const aiReplies = composeMessages(aiReply);
 
     // Same reasoning as above — collect the saved docs so their
@@ -109,6 +171,8 @@ const sendMessage = async (req, res) => {
         sender: "ai",
         message: reply,
         messageType: "CHAT",
+        replyTo: savedUserMessage._id,
+        isRecovery: replyFailed,
       });
 
       savedAiMessages.push(savedReply);
@@ -120,38 +184,49 @@ const sendMessage = async (req, res) => {
       createdAt: 1,
     });
 
-    if (!replyFailed) {
-      try {
-        const extractionResult = await extractMemory({
-          userMessage: textForAI,
-          chatHistory,
-        });
-
-        await processMemory({
-          user: userId,
-          extractionResult,
-        });
-      } catch (err) {
-        console.error("Memory extraction skipped:", err.message);
-      }
+    if (!retryUserMessageId) {
+      await updateRelationship({
+        user: userId,
+        userMessage: textForAI,
+      });
     }
-
-    await updateRelationship({
-      user: userId,
-      userMessage: textForAI,
-    });
 
     res.status(200).json({
       reply: aiReplies,
       conversationState,
       userMessageId: savedUserMessage._id,
       aiMessageIds: savedAiMessages.map((m) => m._id),
+      replyStatus: replyFailed ? "recovery" : "generated",
     });
 
+    if (!replyFailed) {
+      setImmediate(() => {
+        extractMemory({
+          userMessage: textForAI,
+          chatHistory,
+        })
+          .then((extractionResult) =>
+            processMemory({
+              user: userId,
+              extractionResult,
+            })
+          )
+          .catch((error) => {
+            console.error(
+              "Background memory extraction failed:",
+              error?.name || "unexpected_error"
+            );
+          });
+      });
+    }
+
   } catch (error) {
-    console.error(error);
+    console.error("Chat request failed:", error?.name || "unexpected_error");
     res.status(500).json({
       message: "Unable to generate reply.",
+      ...(savedUserMessage?._id
+        ? { userMessageId: savedUserMessage._id }
+        : {}),
     });
   }
 };

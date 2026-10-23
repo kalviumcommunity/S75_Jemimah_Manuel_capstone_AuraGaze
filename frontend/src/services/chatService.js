@@ -62,10 +62,17 @@ export const getHistory = async () => {
 // Send User Message to AI
 // ======================================
 
-export const sendMessage = async (userMessage, files = []) => {
+export const sendMessage = async (
+  userMessage,
+  files = [],
+  { retryUserMessageId } = {}
+) => {
 
   const formData = new FormData();
   formData.append("userMessage", userMessage ?? "");
+  if (retryUserMessageId) {
+    formData.append("retryUserMessageId", retryUserMessageId);
+  }
 
   files.forEach((file) => {
     if (file) formData.append("attachments", file);

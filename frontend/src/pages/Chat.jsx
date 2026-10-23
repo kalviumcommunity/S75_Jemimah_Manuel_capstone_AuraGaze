@@ -24,6 +24,7 @@ export default function Chat() {
   const messagesEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const hasScrolledInitially = useRef(false);
+  const sendInProgressRef = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -38,7 +39,7 @@ export default function Chat() {
   const [nickname, setNickname] = useState("");
 
   const [messages, setMessages] = useState([]);
-  const [quotaNotice, setQuotaNotice] = useState("");
+  const [retryMessage, setRetryMessage] = useState(null);
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
@@ -94,6 +95,8 @@ export default function Chat() {
         sender: msg.sender,
         text: msg.message,
         attachments: msg.attachments || [],
+        isRecovery: Boolean(msg.isRecovery),
+        replyTo: msg.replyTo?._id || msg.replyTo || null,
         timestamp: msg.createdAt || new Date().toISOString(),
       }));
 
@@ -143,14 +146,24 @@ export default function Chat() {
   const wait = (ms) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
-  const thinkingDelay = (text = "") =>
-    Math.min(700 + text.length * 18, 2000);
+  const handleSend = async (
+    text,
+    stagedAttachments = [],
+    retryUserMessageId = null,
+    retryTempUserId = null
+  ) => {
+    if (sendInProgressRef.current) return;
+    if (
+      !retryUserMessageId &&
+      !retryTempUserId &&
+      !text.trim() &&
+      stagedAttachments.length === 0
+    ) return;
 
-  const quickBeatDelay = () =>
-    400 + Math.floor(Math.random() * 200);
-
-  const handleSend = async (text, stagedAttachments = []) => {
-    if (!text.trim() && stagedAttachments.length === 0) return;
+    sendInProgressRef.current = true;
+    if (!retryUserMessageId && !retryTempUserId) {
+      setRetryMessage(null);
+    }
 
     const optimisticAttachments = stagedAttachments.map((a) => ({
       url: a.previewUrl || (a.file ? URL.createObjectURL(a.file) : ""),
@@ -159,29 +172,49 @@ export default function Chat() {
       size: a.size,
     }));
 
-    const tempUserId = `temp-user-${Date.now()}`;
+    const tempUserId =
+      retryTempUserId ||
+      (retryUserMessageId ? null : `temp-user-${Date.now()}`);
 
-    const userMessage = {
-      id: tempUserId,
-      sender: "user",
-      text,
-      attachments: optimisticAttachments,
-      timestamp: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+    if (!retryUserMessageId && !retryTempUserId) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: tempUserId,
+          sender: "user",
+          text,
+          attachments: optimisticAttachments,
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+    }
 
     setTyping(true);
 
     try {
       const files = stagedAttachments.map((a) => a.file);
 
-      const response = await sendMessageToAI(text, files);
+      const response = await sendMessageToAI(text, files, {
+        retryUserMessageId,
+      });
+
+      if (retryUserMessageId) {
+        setMessages((prev) =>
+          prev.filter(
+            (message) =>
+              !(
+                message.sender === "ai" &&
+                message.isRecovery &&
+                message.replyTo === retryUserMessageId
+              )
+          )
+        );
+      }
 
       // Reconcile the optimistic temp ID with the real database
       // ID the backend just created — required so edit/delete
       // work on this message without needing a page reload.
-      if (response.userMessageId) {
+      if (response.userMessageId && tempUserId) {
         setMessages((prev) =>
           prev.map((m) =>
             m.id === tempUserId ? { ...m, id: response.userMessageId } : m
@@ -189,11 +222,14 @@ export default function Chat() {
         );
       }
 
-      if (response.quotaExceeded) {
-        setQuotaNotice(
-          "Aura's AI replies hit today's free API limit. Try again later, or set GEMINI_MODEL in backend/.env to a different model."
-        );
-      }
+      setRetryMessage(
+        response.replyStatus === "recovery"
+          ? {
+              text,
+              userMessageId: response.userMessageId,
+            }
+          : null
+      );
 
       const replies = Array.isArray(response.reply)
         ? response.reply
@@ -204,7 +240,10 @@ export default function Chat() {
       for (let i = 0; i < replies.length; i++) {
         const reply = replies[i];
 
-        const delay = i === 0 ? thinkingDelay(reply) : quickBeatDelay();
+        const delay =
+          i === 0
+            ? Math.min(150 + reply.length * 4, 500)
+            : 150 + Math.floor(Math.random() * 100);
 
         await wait(delay);
 
@@ -218,6 +257,8 @@ export default function Chat() {
             id: newId,
             sender: "ai",
             text: reply,
+            isRecovery: response.replyStatus === "recovery",
+            replyTo: response.userMessageId || null,
             timestamp: new Date().toISOString(),
           },
         ]);
@@ -227,22 +268,29 @@ export default function Chat() {
         }
       }
     } catch (err) {
-      console.error(err);
+      console.error("Chat send failed:", err?.name || "request_error");
+      const failedUserMessageId =
+        err?.response?.data?.userMessageId || retryUserMessageId || null;
 
+      if (failedUserMessageId && tempUserId) {
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.id === tempUserId
+              ? { ...message, id: failedUserMessageId }
+              : message
+          )
+        );
+      }
+
+      setRetryMessage({
+        text,
+        userMessageId: failedUserMessageId,
+        tempUserId,
+      });
+    } finally {
+      sendInProgressRef.current = false;
       setTyping(false);
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `ai-error-${Date.now()}`,
-          sender: "ai",
-          text: "Sorry 😭 Something went wrong. Please try again.",
-          timestamp: new Date().toISOString(),
-        },
-      ]);
     }
-
-    setTyping(false);
   };
 
   const handleFriendImageUpdated = (newImage) => {
@@ -424,14 +472,10 @@ export default function Chat() {
         input={
           <MessageInput
             onSend={handleSend}
+            disabled={typing}
           />
         }
       >
-        {quotaNotice ? (
-          <div className="mx-4 mb-2 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/90">
-            {quotaNotice}
-          </div>
-        ) : null}
         <MessageList
           messages={messages}
           friend={friend}
@@ -443,6 +487,26 @@ export default function Chat() {
           onEditMessage={handleEditMessage}
           onDeleteMessage={handleDeleteSingleMessage}
         />
+        {retryMessage ? (
+          <div className="mx-4 mb-3 flex items-center justify-between gap-4 rounded-2xl border border-violet-300/20 bg-violet-500/10 px-4 py-3 text-sm text-white/80">
+            <span>Want me to take another shot at that?</span>
+            <button
+              type="button"
+              onClick={() =>
+                handleSend(
+                  retryMessage.text,
+                  [],
+                  retryMessage.userMessageId,
+                  retryMessage.tempUserId
+                )
+              }
+              disabled={typing}
+              className="shrink-0 rounded-full bg-violet-500/80 px-4 py-2 font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Try again
+            </button>
+          </div>
+        ) : null}
       </ChatLayout>
 
       <ProfileModal

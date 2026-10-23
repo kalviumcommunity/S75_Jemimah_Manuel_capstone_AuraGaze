@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 import { FiSend, FiSmile, FiPaperclip, FiX, FiFile } from "react-icons/fi";
 import AttachmentMenu from "./AttachmentMenu";
 import EmojiPicker from "./EmojiPicker";
 import PreviewModal from "./PreviewModal";
 
-export default function MessageInput({ onSend }) {
+export default function MessageInput({ onSend, disabled = false }) {
   const [message, setMessage] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [burstKey, setBurstKey] = useState(0);
@@ -133,7 +133,7 @@ export default function MessageInput({ onSend }) {
 
   const send = () => {
     const text = message.trim();
-    if (!text && attachments.length === 0) return;
+    if (disabled || (!text && attachments.length === 0)) return;
 
     // Part 7: onSend now receives the staged attachments too, so
     // Chat.jsx can upload the raw files and render an optimistic
@@ -168,7 +168,7 @@ export default function MessageInput({ onSend }) {
       {/* Staged attachment previews */}
       <AnimatePresence>
         {attachments.length > 0 && (
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
@@ -234,11 +234,11 @@ export default function MessageInput({ onSend }) {
                 </button>
               </div>
             ))}
-          </motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
 
-      <motion.div
+      <Motion.div
         animate={{
           boxShadow: isFocused
             ? "0 0 0 1px rgba(168,85,247,.35), 0 0 30px rgba(168,85,247,.25)"
@@ -265,7 +265,7 @@ export default function MessageInput({ onSend }) {
       >
         {/* Emoji */}
         <div className="relative shrink-0">
-          <motion.button
+          <Motion.button
             ref={emojiBtnRef}
             whileHover={{ scale: 1.12 }}
             whileTap={{ scale: 0.9 }}
@@ -289,11 +289,11 @@ export default function MessageInput({ onSend }) {
             `}
           >
             <FiSmile size={20} />
-          </motion.button>
+          </Motion.button>
 
           <AnimatePresence>
             {showEmojiPicker && (
-              <motion.div
+              <Motion.div
                 ref={emojiPopoverRef}
                 initial={{ opacity: 0, y: 8, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -318,14 +318,14 @@ export default function MessageInput({ onSend }) {
                   onSelect={handleEmojiSelect}
                   onClose={() => setShowEmojiPicker(false)}
                 />
-              </motion.div>
+              </Motion.div>
             )}
           </AnimatePresence>
         </div>
 
         {/* Attachment */}
         <div className="relative shrink-0">
-          <motion.button
+          <Motion.button
             ref={attachBtnRef}
             whileHover={{ scale: 1.12 }}
             whileTap={{ scale: 0.9 }}
@@ -349,11 +349,11 @@ export default function MessageInput({ onSend }) {
             `}
           >
             <FiPaperclip size={20} />
-          </motion.button>
+          </Motion.button>
 
           <AnimatePresence>
             {showAttachmentMenu && (
-              <motion.div
+              <Motion.div
                 ref={attachPopoverRef}
                 initial={{ opacity: 0, y: 8, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -379,7 +379,7 @@ export default function MessageInput({ onSend }) {
                   onFilesSelected={handleFilesSelected}
                   onClose={() => setShowAttachmentMenu(false)}
                 />
-              </motion.div>
+              </Motion.div>
             )}
           </AnimatePresence>
         </div>
@@ -391,6 +391,7 @@ export default function MessageInput({ onSend }) {
           value={message}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
+          disabled={disabled}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholder="Message Sarah..."
@@ -419,7 +420,7 @@ export default function MessageInput({ onSend }) {
             )}
           </AnimatePresence>
 
-          <motion.button
+          <Motion.button
             whileHover={
               hasContent
                 ? {
@@ -430,7 +431,7 @@ export default function MessageInput({ onSend }) {
             }
             whileTap={hasContent ? { scale: 0.9 } : {}}
             onClick={send}
-            disabled={!hasContent}
+            disabled={!hasContent || disabled}
             className="
               relative
               h-12
@@ -454,7 +455,7 @@ export default function MessageInput({ onSend }) {
             {/* Ripple — expands and fades on every click */}
             <AnimatePresence>
               {hasContent && (
-                <motion.span
+                <Motion.span
                   key={burstKey}
                   initial={{ scale: 0, opacity: 0.5 }}
                   animate={{ scale: 2.4, opacity: 0 }}
@@ -465,9 +466,9 @@ export default function MessageInput({ onSend }) {
             </AnimatePresence>
 
             <FiSend size={18} className="relative z-10" />
-          </motion.button>
+          </Motion.button>
         </div>
-      </motion.div>
+      </Motion.div>
 
       <PreviewModal
         attachment={previewAttachment}
@@ -498,7 +499,7 @@ function ParticleBurst() {
   return (
     <div className="absolute inset-0 pointer-events-none">
       {particles.map((p) => (
-        <motion.span
+        <Motion.span
           key={p.id}
           initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
           animate={{ x: p.x, y: p.y, opacity: 0, scale: 0.3 }}

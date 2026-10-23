@@ -8,8 +8,21 @@ const proactive = require("./proactive");
 const specialCases = require("./specialCases");
 const conversationStarters = require("./conversationStarters");
 
+function compactDecorativeDividers(prompt) {
+  return prompt
+    .split(/\r?\n/)
+    .map((line) => {
+      const characters = Array.from(line.trim());
+      return characters.length >= 12 &&
+        characters.every((character) => character.codePointAt(0) === 0x2550)
+        ? "---"
+        : line;
+    })
+    .join("\n");
+}
+
 function buildSystemPrompt() {
-  return `
+  return compactDecorativeDividers(`
 ${identity}
 
 ${language}
@@ -28,7 +41,7 @@ ${proactive}
 
 ${specialCases}
 
-`;
+`);
 }
 
 module.exports = {

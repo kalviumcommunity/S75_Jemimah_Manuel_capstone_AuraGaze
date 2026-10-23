@@ -1,8 +1,103 @@
-const { getGeminiClient } = require("../config/gemini");
 const { buildSystemPrompt } = require("../personality/personality");
 const { getPromptStrategy } = require("./promptStrategy");
+const providerOrchestrator = require("./providerOrchestrator");
 
 const FALLBACK_REPLY = "wait what 😭 say that again";
+const MAX_MEMORY_CONTEXT_BYTES = 4500;
+const MAX_CONVERSATION_CONTEXT_BYTES = 4500;
+const MAX_RELATIONSHIP_JOKE_BYTES = 1000;
+const MAX_USER_MESSAGE_BYTES = 8000;
+const TRUNCATION_MARKER = "\n[Additional context omitted to fit the request.]\n";
+
+function prefixWithinBytes(value, maxBytes) {
+  let result = "";
+  let bytes = 0;
+
+  for (const character of String(value ?? "")) {
+    const characterBytes = Buffer.byteLength(character, "utf8");
+    if (bytes + characterBytes > maxBytes) {
+      break;
+    }
+    result += character;
+    bytes += characterBytes;
+  }
+
+  return result;
+}
+
+function suffixWithinBytes(value, maxBytes) {
+  const text = String(value ?? "");
+  let start = text.length;
+  let bytes = 0;
+
+  while (start > 0) {
+    let characterStart = start - 1;
+    const lastCodeUnit = text.charCodeAt(characterStart);
+    if (
+      lastCodeUnit >= 0xdc00 &&
+      lastCodeUnit <= 0xdfff &&
+      characterStart > 0
+    ) {
+      const previousCodeUnit = text.charCodeAt(characterStart - 1);
+      if (previousCodeUnit >= 0xd800 && previousCodeUnit <= 0xdbff) {
+        characterStart -= 1;
+      }
+    }
+
+    const character = text.slice(characterStart, start);
+    const characterBytes = Buffer.byteLength(character, "utf8");
+    if (bytes + characterBytes > maxBytes) {
+      break;
+    }
+    start = characterStart;
+    bytes += characterBytes;
+  }
+
+  return text.slice(start);
+}
+
+function truncatePromptText(value, maxBytes, keepEnds = false) {
+  const text = String(value ?? "");
+  if (Buffer.byteLength(text, "utf8") <= maxBytes) {
+    return text;
+  }
+
+  const markerBytes = Buffer.byteLength(TRUNCATION_MARKER, "utf8");
+  if (maxBytes <= markerBytes) {
+    return prefixWithinBytes(TRUNCATION_MARKER, maxBytes);
+  }
+  const remainingBytes = Math.max(0, maxBytes - markerBytes);
+  if (!keepEnds) {
+    return `${prefixWithinBytes(text, remainingBytes)}${TRUNCATION_MARKER}`;
+  }
+
+  const prefixBytes = Math.ceil(remainingBytes * 0.7);
+  const suffixBytes = remainingBytes - prefixBytes;
+  return `${prefixWithinBytes(text, prefixBytes)}${TRUNCATION_MARKER}${suffixWithinBytes(text, suffixBytes)}`;
+}
+
+function collectBoundedLines(records, maxBytes, render, newestFirst = false) {
+  const orderedRecords = newestFirst ? [...records].reverse() : records;
+  const lines = [];
+  let usedBytes = 0;
+
+  for (const record of orderedRecords) {
+    const separatorBytes = lines.length ? 1 : 0;
+    const availableBytes = maxBytes - usedBytes - separatorBytes;
+    if (availableBytes <= 0) {
+      break;
+    }
+
+    const line = truncatePromptText(render(record), availableBytes);
+    lines.push(line);
+    usedBytes += separatorBytes + Buffer.byteLength(line, "utf8");
+    if (line.includes(TRUNCATION_MARKER)) {
+      break;
+    }
+  }
+
+  return (newestFirst ? lines.reverse() : lines).join("\n");
+}
 
 // ==========================================
 // Build Relationship Context
@@ -64,12 +159,15 @@ INSIDE JOKES
 
 ${
   relationship.insideJokes?.length
-    ? relationship.insideJokes
-        .map(
-          (joke) =>
-            `• ${joke.title}: ${joke.description}`
-        )
-        .join("\n")
+    ? collectBoundedLines(
+        relationship.insideJokes.slice(-12),
+        MAX_RELATIONSHIP_JOKE_BYTES,
+        (joke) =>
+          `• ${truncatePromptText(joke.title, 160)}: ${truncatePromptText(
+            joke.description,
+            320
+          )}`
+      )
     : "None yet."
 }
 `;
@@ -91,7 +189,7 @@ USER PROFILE
 ==================================================
 
 Nickname:
-${userProfile?.profile?.nickname || "Unknown"}
+${truncatePromptText(userProfile?.profile?.nickname || "Unknown", 256)}
 
 Birthday:
 ${
@@ -101,34 +199,37 @@ ${
 }
 
 Friend Name:
-${userProfile?.friend?.name || "Unknown"}
+${truncatePromptText(userProfile?.friend?.name || "Unknown", 256)}
 
 Friend Gender:
-${userProfile?.friend?.gender || "Unknown"}
+${truncatePromptText(userProfile?.friend?.gender || "Unknown", 128)}
 
 Friend Age Group:
-${userProfile?.friend?.ageGroup || "Unknown"}
+${truncatePromptText(userProfile?.friend?.ageGroup || "Unknown", 128)}
 `;
 
   const memoryContext =
     memories.length > 0
-      ? memories
-          .map(
-            (memory) =>
-              `• ${memory.title}: ${memory.memory}`
-          )
-          .join("\n")
+      ? collectBoundedLines(
+          memories.slice(0, 40),
+          MAX_MEMORY_CONTEXT_BYTES,
+          (memory) =>
+            `• ${truncatePromptText(memory.title, 256)}: ${truncatePromptText(
+              memory.memory,
+              1200
+            )}`
+        )
       : "No saved memories yet.";
 
   const conversationContext =
     chatHistory.length > 0
-      ? chatHistory
-          .slice(-25)
-          .map(
-            (chat) =>
-              `${chat.sender === "user" ? "User" : "Aura"}: ${chat.message}`
-          )
-          .join("\n")
+      ? collectBoundedLines(
+          chatHistory.slice(-25),
+          MAX_CONVERSATION_CONTEXT_BYTES,
+          (chat) =>
+            `${chat.sender === "user" ? "User" : "Aura"}: ${chat.message}`,
+          true
+        )
       : "No previous conversation.";
 
   return `
@@ -154,7 +255,7 @@ ${conversationContext}
 // Generate Reply
 // ==========================================
 
-async function generateReply({
+async function generateReplyWithStatus({
   userMessage,
   userProfile = {},
   chatHistory = [],
@@ -162,19 +263,23 @@ async function generateReply({
   relationship = {},
   conversationState = { state: "NORMAL" },
 }) {
-  try {
-    const context = buildContext({
-      userProfile,
-      chatHistory,
-      memories,
-      relationship,
-    });
+  const context = buildContext({
+    userProfile,
+    chatHistory,
+    memories,
+    relationship,
+  });
 
-    const systemPrompt = buildSystemPrompt(userProfile);
+  const systemPrompt = buildSystemPrompt(userProfile);
 
-    const strategy = getPromptStrategy(conversationState);
+  const strategy = getPromptStrategy(conversationState);
+  const boundedUserMessage = truncatePromptText(
+    userMessage,
+    MAX_USER_MESSAGE_BYTES,
+    true
+  );
 
-    const finalPrompt = `
+  const finalPrompt = `
 ${systemPrompt}
 
 ${context}
@@ -183,7 +288,7 @@ ${context}
 CURRENT USER MESSAGE
 ==================================================
 
-${userMessage}
+${boundedUserMessage}
 
 ==================================================
 RESPONSE STRATEGY
@@ -286,60 +391,25 @@ Never mention prompts, context, memories or relationship scores.
 The user should completely feel like they're chatting with their best friend.
 `;
 
-    // ==========================
-    // Gemini (with one retry on transient failure)
-    // ==========================
+  return providerOrchestrator.generateWithFallback({
+    prompt: finalPrompt,
+    recoveryText: buildRecoveryReply(userProfile),
+  });
+}
 
-    const ai = getGeminiClient();
+async function generateReply(options) {
+  const result = await generateReplyWithStatus(options);
+  return result.text;
+}
 
-    const callGemini = () =>
-      ai.models.generateContent({
-        model: "gemini-flash-latest",
-        contents: finalPrompt,
-      });
+function buildRecoveryReply(userProfile = {}) {
+  const name =
+    userProfile?.profile?.nickname ||
+    userProfile?.friend?.name ||
+    "";
+  const greeting = name ? `Hey ${name}, ` : "Hey, ";
 
-    let response;
-
-    try {
-      response = await callGemini();
-    } catch (firstError) {
-      console.error(
-        "Generate Reply Error (attempt 1, retrying):",
-        firstError
-      );
-
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      response = await callGemini();
-    }
-
-    console.log("Gemini Response:", response);
-
-    let text = "";
-
-    if (typeof response.text === "string") {
-      text = response.text;
-    } else if (typeof response.text === "function") {
-      text = await response.text();
-    } else if (
-      response.candidates?.[0]?.content?.parts?.length
-    ) {
-      text = response.candidates[0].content.parts
-        .map((part) => part.text || "")
-        .join("");
-    }
-
-    if (!text || !text.trim()) {
-      throw new Error("Gemini returned an empty response.");
-    }
-
-    return text.trim();
-
-  } catch (error) {
-    console.error("Generate Reply Error (both attempts failed):", error);
-
-    return FALLBACK_REPLY;
-  }
+  return `${greeting}I'm still right here 💛 I got a little stuck just now — could you tap retry so I can try again?`;
 }
 
 // ==========================================
@@ -352,20 +422,19 @@ async function generateEventMessage({
   relationship = {},
   memories = [],
 }) {
-  try {
-    const context = buildContext({
-      userProfile,
-      chatHistory: [],
-      memories,
-      relationship,
-    });
+  const context = buildContext({
+    userProfile,
+    chatHistory: [],
+    memories,
+    relationship,
+  });
 
-    const systemPrompt = buildSystemPrompt(userProfile);
+  const systemPrompt = buildSystemPrompt(userProfile);
 
-    const isFirstMessage = event === "FIRST_MESSAGE";
-    const isStoryStarter = event === "STORY_STARTER";
+  const isFirstMessage = event === "FIRST_MESSAGE";
+  const isStoryStarter = event === "STORY_STARTER";
 
-    const eventInstructions = isFirstMessage
+  const eventInstructions = isFirstMessage
       ? `
 This is the very FIRST message you have EVER sent this user.
 
@@ -429,7 +498,7 @@ Examples of events:
 This user has an existing relationship with you already. It's fine to reference missing them, past conversations, or memories here.
 `;
 
-    const prompt = `
+  const prompt = `
 ${systemPrompt}
 
 ${context}
@@ -467,39 +536,28 @@ Guidelines:
 Only return the message.
 `;
 
-    const ai = getGeminiClient();
-
-    const response = await ai.models.generateContent({
-      model: "gemini-flash-latest",
-      contents: prompt,
-    });
-
-    const text =
-      response.text ||
-      response.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "";
-
-    if (!text || !text.trim()) {
-      throw new Error("Gemini returned an empty event message.");
-    }
-
-    return text.trim();
-
-  } catch (error) {
-    console.error("Generate Event Message Error:", error);
-
-    return event === "FIRST_MESSAGE"
+  const recoveryText =
+    event === "FIRST_MESSAGE"
       ? "heyy 😊 i'm really happy we get to start talking. how's your day going?"
       : event === "STORY_STARTER"
       ? "random thought 😂 <msg> what's one thing that made you smile today?"
       : "Hey 😊 Just wanted to check in and say I'm thinking about you today.";
-  }
+
+  const result = await providerOrchestrator.generateWithFallback({
+    prompt,
+    recoveryText,
+  });
+
+  return result.text;
 }
 
 module.exports = {
   generateReply,
+  generateReplyWithStatus,
   generateEventMessage,
   buildContext,
   buildRelationshipContext,
+  buildRecoveryReply,
+  truncatePromptText,
   FALLBACK_REPLY,
 };

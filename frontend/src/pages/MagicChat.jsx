@@ -25,6 +25,7 @@ export default function MagicChat() {
   // =========================================================
 
   const canvasRef = useRef(null);
+  const sendInProgressRef = useRef(false);
 
   // =========================================================
   // BASIC STATE
@@ -41,6 +42,7 @@ export default function MagicChat() {
   const [messages, setMessages] = useState([]);
 
   const [typing, setTyping] = useState(false);
+  const [retryMessage, setRetryMessage] = useState(null);
 
   // =========================================================
   // TARGET
@@ -110,6 +112,14 @@ export default function MagicChat() {
             attachments:
               msg.attachments ||
               [],
+
+            isRecovery:
+              Boolean(msg.isRecovery),
+
+            replyTo:
+              msg.replyTo?._id ||
+              msg.replyTo ||
+              null,
 
             timestamp:
               msg.createdAt ||
@@ -277,6 +287,8 @@ export default function MagicChat() {
     }) => {
       if (
         !text?.trim() ||
+        typing ||
+        sendInProgressRef.current ||
         !targetLocked ||
         flyingScroll?.visible
       ) {
@@ -335,6 +347,7 @@ export default function MagicChat() {
       target,
       targetLocked,
       flyingScroll,
+      typing,
       getSlingshotPosition,
     ]
   );
@@ -346,9 +359,12 @@ export default function MagicChat() {
   const handleFlyingComplete =
     useCallback(
       async () => {
-        if (!flyingScroll) {
+        if (!flyingScroll || sendInProgressRef.current) {
           return;
         }
+
+        sendInProgressRef.current = true;
+        setRetryMessage(null);
 
         const text =
           flyingScroll.text;
@@ -484,6 +500,15 @@ export default function MagicChat() {
               ? response.aiMessageIds
               : [];
 
+          setRetryMessage(
+            response?.replyStatus === "recovery"
+              ? {
+                  text,
+                  userMessageId: response.userMessageId,
+                }
+              : null
+          );
+
           /*
            * If backend somehow returns no reply,
            * don't leave the user thinking the app is frozen.
@@ -524,12 +549,7 @@ export default function MagicChat() {
               (resolve) =>
                 setTimeout(
                   resolve,
-                  Math.min(
-                    700 +
-                      reply.length *
-                        18,
-                    2000
-                  )
+                  Math.min(150 + reply.length * 4, 500)
                 )
             );
 
@@ -557,6 +577,12 @@ export default function MagicChat() {
 
                   text: reply,
 
+                  isRecovery:
+                    response?.replyStatus === "recovery",
+
+                  replyTo:
+                    response?.userMessageId || null,
+
                   attachments: [],
 
                   timestamp:
@@ -581,44 +607,118 @@ export default function MagicChat() {
           }
         } catch (err) {
           console.error(
-            "Magic Chat send error:",
-            err
+            "Magic Chat send failed:",
+            err?.name || "request_error"
           );
 
-          setTyping(false);
+          const failedUserMessageId =
+            err?.response?.data?.userMessageId || null;
 
-          /*
-           * Error messages are also random-position
-           * messages because they have no target.
-           */
-          setMessages(
-            (previous) => [
-              ...previous,
+          if (failedUserMessageId) {
+            setMessages((previous) =>
+              previous.map((message) =>
+                message.id === tempId
+                  ? { ...message, id: failedUserMessageId }
+                  : message
+              )
+            );
+          }
 
-              {
-                id:
-                  `magic-error-${Date.now()}`,
-
-                sender: "ai",
-
-                text:
-                  "Sorry 😭 Something went wrong. Please try again.",
-
-                attachments: [],
-
-                timestamp:
-                  new Date().toISOString(),
-
-                target: null,
-              },
-            ]
-          );
+          setRetryMessage({
+            text,
+            userMessageId: failedUserMessageId,
+            tempUserId: tempId,
+          });
         } finally {
+          sendInProgressRef.current = false;
           setTyping(false);
         }
       },
       [flyingScroll]
     );
+
+  const handleRetry = async () => {
+    if (!retryMessage || sendInProgressRef.current) {
+      return;
+    }
+
+    sendInProgressRef.current = true;
+    setTyping(true);
+
+    try {
+      const response = await sendMessageToAI(
+        retryMessage.text,
+        [],
+        retryMessage.userMessageId
+          ? { retryUserMessageId: retryMessage.userMessageId }
+          : {}
+      );
+
+      setMessages((previous) =>
+        previous
+          .map((message) =>
+            message.id === retryMessage.tempUserId &&
+            response?.userMessageId
+              ? { ...message, id: response.userMessageId }
+              : message
+          )
+          .filter(
+            (message) =>
+              !(
+                message.sender === "ai" &&
+                message.isRecovery &&
+                message.replyTo === retryMessage.userMessageId
+              )
+          )
+      );
+
+      const replies = Array.isArray(response?.reply)
+        ? response.reply
+        : response?.reply
+        ? [response.reply]
+        : [];
+      const aiIds = Array.isArray(response?.aiMessageIds)
+        ? response.aiMessageIds
+        : [];
+
+      setRetryMessage(
+        response?.replyStatus === "recovery"
+          ? retryMessage
+          : null
+      );
+
+      setMessages((previous) => [
+        ...previous,
+        ...replies
+          .map((reply, index) => ({
+            id: aiIds[index] || `magic-ai-${Date.now()}-${index}`,
+            sender: "ai",
+            text: String(reply ?? "").trim(),
+            isRecovery: response?.replyStatus === "recovery",
+            replyTo: response?.userMessageId || null,
+            attachments: [],
+            timestamp: new Date().toISOString(),
+            target: null,
+          }))
+          .filter((message) => message.text),
+      ]);
+    } catch (err) {
+      console.error(
+        "Magic Chat retry failed:",
+        err?.name || "request_error"
+      );
+      setRetryMessage((previous) => ({
+        ...previous,
+        userMessageId:
+          err?.response?.data?.userMessageId ||
+          previous?.userMessageId ||
+          null,
+      }));
+    } finally {
+      sendInProgressRef.current = false;
+      setTyping(false);
+    }
+  };
 
   // =========================================================
   // LOADING
@@ -801,6 +901,20 @@ export default function MagicChat() {
         />
       </div>
 
+      {retryMessage ? (
+        <div className="absolute bottom-28 left-1/2 z-[650] flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-violet-300/20 bg-[#190d2d]/95 px-4 py-3 text-sm text-white shadow-xl">
+          <span>Want me to take another shot?</span>
+          <button
+            type="button"
+            onClick={handleRetry}
+            disabled={typing}
+            className="rounded-full bg-violet-500/80 px-4 py-2 font-medium transition hover:bg-violet-500 disabled:opacity-50"
+          >
+            Try again
+          </button>
+        </div>
+      ) : null}
+
       {/* =====================================================
           SLINGSHOT INPUT
       ===================================================== */}
@@ -820,6 +934,7 @@ export default function MagicChat() {
           }
           disabled={
             flyingScroll?.visible ||
+            typing ||
             false
           }
           onLaunch={
