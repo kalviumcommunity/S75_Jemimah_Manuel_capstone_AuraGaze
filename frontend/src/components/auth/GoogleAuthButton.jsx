@@ -4,11 +4,13 @@ import axios from "axios";
 import { motion } from "framer-motion";
 
 const backendURL = import.meta.env.VITE_BACKEND_URL;
+const MotionButton = motion.button;
 
 export default function GoogleAuthButton({
   onSuccess,
   onError,
   disabled = false,
+  mode = "signup",
 }) {
   const [loading, setLoading] = useState(false);
 
@@ -32,6 +34,7 @@ export default function GoogleAuthButton({
           `${backendURL}/auth/google`,
           {
             accessToken: tokenResponse.access_token,
+            mode,
           }
         );
 
@@ -81,7 +84,7 @@ export default function GoogleAuthButton({
   };
 
   return (
-    <motion.button
+    <MotionButton
       type="button"
       onClick={handleGoogleLogin}
       disabled={disabled || loading}
@@ -140,6 +143,6 @@ export default function GoogleAuthButton({
           ? "Connecting to Google..."
           : "Continue with Google"}
       </span>
-    </motion.button>
+    </MotionButton>
   );
 }

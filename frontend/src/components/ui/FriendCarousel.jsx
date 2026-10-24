@@ -1,243 +1,248 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 import Typography from "./Typography";
 import PrimaryButton from "./PrimaryButton";
 
+function getImageLabel(index) {
+  return `Companion option ${index + 1}`;
+}
+
+/**
+ * A responsive, edge-to-edge portrait carousel.
+ * The img element itself is the artwork: there is no second card/frame inside it.
+ */
 export default function FriendCarousel({
-  images,
-  current,
+  images = [],
+  current = 0,
   previous,
   next,
-  friendName,
-  companionQuotes,
+  direction = 1,
+  friendName = "your best friend",
+  companionQuotes = [],
   handleContinue,
+  isSaving = false,
 }) {
-  const previousIndex = current === 0 ? images.length - 1 : current - 1;
-  const nextIndex = current === images.length - 1 ? 0 : current + 1;
+  if (!images.length) return null;
+
+  const safeCurrent = ((current % images.length) + images.length) % images.length;
+  const previousIndex = (safeCurrent - 1 + images.length) % images.length;
+  const nextIndex = (safeCurrent + 1) % images.length;
+  const quote = companionQuotes.length
+    ? companionQuotes[safeCurrent % companionQuotes.length]
+    : "Every little moment can become a memory.";
+
+  const sideButtonStyle = {
+    width: "100%",
+    maxWidth: 205,
+    maxHeight: "92%",
+    aspectRatio: "2 / 3",
+    alignSelf: "center",
+    justifySelf: "center",
+    overflow: "hidden",
+    padding: 0,
+    border: 0,
+    borderRadius: 18,
+    background: "transparent",
+    cursor: isSaving || images.length < 2 ? "default" : "pointer",
+    transformStyle: "preserve-3d",
+  };
+
+  const sideImageStyle = {
+    display: "block",
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    objectPosition: "center top",
+    borderRadius: "inherit",
+    boxShadow: "0 14px 38px rgba(4,0,18,.34)",
+    userSelect: "none",
+  };
 
   return (
-    <>
-      {/* ==========================================
-          Cover Flow — full-width relative stage.
-          Side cards are absolutely positioned at
-          fixed viewport percentages, so their
-          placement is guaranteed regardless of
-          content width or column sizing.
-      ========================================== */}
-
-      <div
-        className="relative w-full"
-        style={{
-          height: 480,
-          perspective: 1600,
-        }}
-      >
-        {/* Previous Card — pinned near the left edge */}
-        <motion.div
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.96 }}
-          onClick={previous}
-          className="cursor-pointer select-none"
+    <div
+      className="flex h-full min-h-0 w-full flex-col items-center"
+      style={{ minHeight: 0 }}
+    >
+      {/* Portrait area. It gets its own bounded row, separate from the quote and button. */}
+      <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+        <div
+          className="grid w-full grid-cols-[minmax(0,0.76fr)_minmax(0,1fr)_minmax(0,0.76fr)] items-center gap-2 sm:gap-5"
           style={{
-            position: "absolute",
-            left: "3%",
-            top: "50%",
-            transformStyle: "preserve-3d",
+            width: "100%",
+            maxWidth: 1040,
+            height: "100%",
+            minHeight: 0,
+            perspective: 1400,
+            margin: "0 auto",
           }}
-          initial={false}
-          animate={{ y: "-50%" }}
         >
-          <motion.div
-            animate={{
-              rotateY: 26,
-              opacity: 0.72,
-            }}
-            transition={{ duration: 0.4 }}
-            style={{ transformStyle: "preserve-3d" }}
+          {/* Previous portrait: the image itself fills the selectable area. */}
+          <motion.button
+            type="button"
+            key={`previous-${previousIndex}`}
+            onClick={previous}
+            disabled={isSaving || images.length < 2}
+            aria-label="Show previous companion"
+            initial={{ opacity: 0, x: -22, rotateY: 17, scale: 0.9 }}
+            animate={{ opacity: 0.74, x: 0, rotateY: 10, scale: 0.94 }}
+            whileHover={!isSaving ? { opacity: 1, scale: 0.98, x: 2 } : {}}
+            whileTap={!isSaving ? { scale: 0.9 } : {}}
+            transition={{ duration: 0.48, ease: [0.22, 1, 0.36, 1] }}
+            style={sideButtonStyle}
+            className="relative border-0 bg-transparent p-0 outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
           >
             <img
               src={images[previousIndex]}
-              alt="Previous Friend"
-              style={{
-                width: 240,
-                height: 370,
-                objectFit: "cover",
-                borderRadius: 26,
-                border: "1px solid rgba(255,255,255,.12)",
-                boxShadow: "0 25px 70px rgba(0,0,0,.5)",
-                filter: "blur(1px) brightness(.85)",
-              }}
+              alt={getImageLabel(previousIndex)}
+              draggable="false"
+              style={sideImageStyle}
             />
-          </motion.div>
-        </motion.div>
+            <span className="pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-t from-[#10051f]/38 via-transparent to-white/[0.04]" />
+            <span className="pointer-events-none absolute bottom-2 left-0 right-0 text-center text-[9px] font-semibold tracking-[0.13em] text-white/90 sm:bottom-3 sm:text-[10px]">
+              PREVIOUS
+            </span>
+          </motion.button>
 
-        {/* Selected Friend — perfectly centered */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={current}
-            initial={{ opacity: 0, scale: 0.9, y: "-50%" }}
-            animate={{ opacity: 1, scale: 1, y: "-50%" }}
-            exit={{ opacity: 0, scale: 0.9, y: "-60%" }}
-            transition={{ duration: 0.4 }}
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              x: "-50%",
-              zIndex: 20,
-            }}
-          >
-            <motion.div
-              animate={{ scale: [1, 1.06, 1], opacity: [0.5, 0.8, 0.5] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              style={{
-                position: "absolute",
-                inset: -45,
-                borderRadius: 50,
-                background:
-                  "radial-gradient(circle, rgba(168,85,247,.32), transparent 70%)",
-                filter: "blur(65px)",
-                zIndex: -2,
-              }}
-            />
-
-            <motion.div
-              animate={{ x: ["-180%", "240%"] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: 90,
-                background: "rgba(255,255,255,.16)",
-                transform: "rotate(14deg)",
-                filter: "blur(18px)",
-                pointerEvents: "none",
-                zIndex: 3,
-              }}
-            />
-
-            <motion.img
-              animate={{ y: [0, -6, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              src={images[current]}
-              alt={friendName}
-              style={{
-                width: 300,
-                height: 460,
-                objectFit: "cover",
-                borderRadius: 32,
-                border: "1px solid rgba(213,179,255,.5)",
-                boxShadow: "0 30px 100px rgba(168,85,247,.45)",
-                position: "relative",
-                zIndex: 2,
-              }}
-            />
-
+          {/* Selected portrait. Intrinsic proportions are preserved to avoid head/foot cropping. */}
+          <div className="relative flex h-full min-w-0 items-center justify-center">
             <div
+              aria-hidden="true"
+              className="pointer-events-none absolute rounded-full"
               style={{
-                position: "absolute",
-                inset: 0,
-                borderRadius: 32,
-                border: "1px solid rgba(255,255,255,.15)",
-                boxShadow:
-                  "0 0 0 1px rgba(255,255,255,.05), 0 0 60px rgba(168,85,247,.25)",
-                pointerEvents: "none",
-                zIndex: 4,
+                inset: "6% -16%",
+                background:
+                  "radial-gradient(ellipse, rgba(168,85,247,.26), rgba(99,40,190,.09) 48%, transparent 73%)",
+                filter: "blur(25px)",
               }}
             />
-          </motion.div>
-        </AnimatePresence>
 
-        {/* Next Card — pinned near the right edge */}
-        <motion.div
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.96 }}
-          onClick={next}
-          className="cursor-pointer select-none"
-          style={{
-            position: "absolute",
-            right: "3%",
-            top: "50%",
-            transformStyle: "preserve-3d",
-          }}
-          initial={false}
-          animate={{ y: "-50%" }}
-        >
-          <motion.div
-            animate={{
-              rotateY: -26,
-              opacity: 0.72,
-            }}
-            transition={{ duration: 0.4 }}
-            style={{ transformStyle: "preserve-3d" }}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.img
+                key={`selected-${safeCurrent}`}
+                src={images[safeCurrent]}
+                alt={`Selected companion for ${friendName}`}
+                draggable="false"
+                initial={{
+                  opacity: 0,
+                  x: direction * 42,
+                  rotateY: direction * 24,
+                  rotateZ: direction * 0.8,
+                  scale: 0.94,
+                }}
+                animate={{ opacity: 1, x: 0, rotateY: 0, rotateZ: 0, scale: 1 }}
+                exit={{
+                  opacity: 0,
+                  x: direction * -32,
+                  rotateY: direction * -20,
+                  rotateZ: direction * -0.6,
+                  scale: 0.96,
+                }}
+                transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+                className="relative z-[1] block max-w-full rounded-[18px] sm:rounded-[22px]"
+                style={{
+                  height: "100%",
+                  width: "auto",
+                  maxWidth: "100%",
+                  aspectRatio: "2 / 3",
+                  objectFit: "contain",
+                  objectPosition: "center center",
+                  border: "1px solid rgba(226,196,255,.55)",
+                  boxShadow:
+                    "0 18px 48px rgba(5,0,20,.38), 0 0 28px rgba(168,85,247,.22)",
+                  transformStyle: "preserve-3d",
+                  backfaceVisibility: "hidden",
+                  userSelect: "none",
+                }}
+              />
+            </AnimatePresence>
+          </div>
+
+          {/* Next portrait */}
+          <motion.button
+            type="button"
+            key={`next-${nextIndex}`}
+            onClick={next}
+            disabled={isSaving || images.length < 2}
+            aria-label="Show next companion"
+            initial={{ opacity: 0, x: 22, rotateY: -17, scale: 0.9 }}
+            animate={{ opacity: 0.74, x: 0, rotateY: -10, scale: 0.94 }}
+            whileHover={!isSaving ? { opacity: 1, scale: 0.98, x: -2 } : {}}
+            whileTap={!isSaving ? { scale: 0.9 } : {}}
+            transition={{ duration: 0.48, ease: [0.22, 1, 0.36, 1] }}
+            style={sideButtonStyle}
+            className="relative border-0 bg-transparent p-0 outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
           >
             <img
               src={images[nextIndex]}
-              alt="Next Friend"
-              style={{
-                width: 240,
-                height: 370,
-                objectFit: "cover",
-                borderRadius: 26,
-                border: "1px solid rgba(255,255,255,.12)",
-                boxShadow: "0 25px 70px rgba(0,0,0,.5)",
-                filter: "blur(1px) brightness(.85)",
-              }}
+              alt={getImageLabel(nextIndex)}
+              draggable="false"
+              style={sideImageStyle}
             />
-          </motion.div>
-        </motion.div>
+            <span className="pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-t from-[#10051f]/38 via-transparent to-white/[0.04]" />
+            <span className="pointer-events-none absolute bottom-2 left-0 right-0 text-center text-[9px] font-semibold tracking-[0.13em] text-white/90 sm:bottom-3 sm:text-[10px]">
+              NEXT
+            </span>
+          </motion.button>
+        </div>
       </div>
 
-      {/* Quote */}
-      <motion.div
-        key={current}
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-        style={{ marginTop: "18px", textAlign: "center" }}
-      >
-        <Typography
-          variant="subtitle"
-          align="center"
-          animate
-          style={{ fontSize: "16px", opacity: 0.9 }}
-        >
-          {companionQuotes[current % companionQuotes.length]}
-        </Typography>
-      </motion.div>
+      {/* This row starts only after the portrait row ends, so the quote cannot overlap the photo. */}
+      <div className="mt-2 flex min-h-[22px] w-full shrink-0 items-center justify-center px-3 text-center sm:mt-3">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.p
+            key={`quote-${safeCurrent}`}
+            initial={{ opacity: 0, y: 6, filter: "blur(2px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -4, filter: "blur(1px)" }}
+            transition={{ duration: 0.24 }}
+            className="m-0 max-w-2xl text-center text-[12px] font-semibold leading-5 text-[#F6EBFF]/95 sm:text-[14px]"
+          >
+            {quote}
+          </motion.p>
+        </AnimatePresence>
+      </div>
 
-      {/* Indicators */}
+      {/* Compact indicators */}
       <div
-        className="flex justify-center items-center"
-        style={{ gap: 10, marginTop: "14px" }}
+        className="mt-2 flex h-[6px] shrink-0 items-center justify-center gap-1.5"
+        aria-label={`Companion ${safeCurrent + 1} of ${images.length}`}
       >
-        {images.map((_, index) => (
-          <motion.div
-            key={index}
+        {images.map((image, index) => (
+          <motion.span
+            key={`${index}-${String(image)}`}
             animate={{
-              width: current === index ? 26 : 8,
-              opacity: current === index ? 1 : 0.35,
-              backgroundColor: current === index ? "#C58CFF" : "#FFFFFF",
+              width: safeCurrent === index ? 18 : 5,
+              opacity: safeCurrent === index ? 1 : 0.32,
+              backgroundColor: safeCurrent === index ? "#D5A0FF" : "#FFFFFF",
             }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.2 }}
+            className="block rounded-full"
             style={{
-              height: 8,
-              borderRadius: 999,
+              height: 5,
               boxShadow:
-                current === index ? "0 0 14px rgba(197,140,255,.7)" : "none",
+                safeCurrent === index ? "0 0 9px rgba(197,140,255,.7)" : "none",
             }}
           />
         ))}
       </div>
 
-      {/* Choose Button */}
-      <div className="w-full flex justify-center" style={{ marginTop: "22px" }}>
-        <div style={{ maxWidth: 300, width: "100%" }}>
-          <PrimaryButton onClick={handleContinue}>
-            Choose {friendName} 💖
+      {/* Stable bottom action row; the heart stays on the same line as the label. */}
+      <div
+        className="flex w-full shrink-0 justify-center px-4"
+        style={{ marginTop: 8, paddingTop: 3, paddingBottom: 3 }}
+      >
+        <div className="w-full" style={{ maxWidth: 340 }}>
+          <PrimaryButton
+            onClick={handleContinue}
+            disabled={isSaving}
+            loading={isSaving}
+            size="sm"
+            className="!h-12 !whitespace-nowrap !rounded-full !px-4"
+          >
+            {isSaving ? "Saving your friend…" : "Choose this companion 💜"}
           </PrimaryButton>
         </div>
       </div>
-    </>
+    </div>
   );
 }

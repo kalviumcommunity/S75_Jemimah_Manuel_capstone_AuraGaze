@@ -172,6 +172,7 @@ export default function Signup() {
       =========================== */}
 
       <GoogleAuthButton
+        mode="signup"
         onSuccess={handleGoogleSuccess}
         onError={handleGoogleError}
         disabled={loading}

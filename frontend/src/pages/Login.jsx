@@ -159,6 +159,7 @@ export default function Login() {
       =========================== */}
 
       <GoogleAuthButton
+        mode="login"
         onSuccess={handleGoogleSuccess}
         onError={handleGoogleError}
         disabled={loading}

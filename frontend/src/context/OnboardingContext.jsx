@@ -1,39 +1,30 @@
 import { createContext, useContext, useState } from "react";
 
-// Create Context
-const OnboardingContext = createContext();
+const OnboardingContext = createContext(null);
 
-// Provider Component
+const initialOnboardingData = {
+  nickname: "",
+  friendName: "",
+  dob: "",
+  gender: "",
+  age: "",
+  image: "",
+};
+
 export const OnboardingProvider = ({ children }) => {
-
   const [onboardingData, setOnboardingData] = useState({
-    nickname: "",
-    friendName: "",
-    dob: "",
-    gender: "",
-    age: "",
-    image: "",
+    ...initialOnboardingData,
   });
 
-  // Update any field
   const updateField = (field, value) => {
-    setOnboardingData((prev) => ({
-      ...prev,
+    setOnboardingData((previousData) => ({
+      ...previousData,
       [field]: value,
-      
     }));
   };
 
-  // Reset after onboarding is complete
   const resetOnboarding = () => {
-    setOnboardingData({
-      nickname: "",
-      friendName: "",
-      dob: "",
-      gender: "",
-      age: "",
-      image: "",
-    });
+    setOnboardingData({ ...initialOnboardingData });
   };
 
   return (
@@ -49,7 +40,14 @@ export const OnboardingProvider = ({ children }) => {
   );
 };
 
-// Custom Hook
 export const useOnboarding = () => {
-  return useContext(OnboardingContext);
+  const context = useContext(OnboardingContext);
+
+  if (!context) {
+    throw new Error(
+      "useOnboarding must be used inside an OnboardingProvider."
+    );
+  }
+
+  return context;
 };
