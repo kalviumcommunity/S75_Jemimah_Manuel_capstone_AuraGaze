@@ -39,14 +39,24 @@ const signup = async (req, res) => {
       password,
     } = req.body;
 
-    if (!username || !email || !password) {
+    if (
+      typeof username !== "string" ||
+      typeof email !== "string" ||
+      typeof password !== "string" ||
+      !username.trim() ||
+      !email.trim() ||
+      !password
+    ) {
       return res.status(400).json({
         message: "All fields are required",
       });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedUsername = username.trim();
+
     const existingUser = await User.findOne({
-      email: email.toLowerCase(),
+      email: normalizedEmail,
     });
 
     if (existingUser) {
@@ -56,7 +66,7 @@ const signup = async (req, res) => {
     }
 
     const existingUsername = await User.findOne({
-      username,
+      username: normalizedUsername,
     });
 
     if (existingUsername) {
@@ -71,8 +81,8 @@ const signup = async (req, res) => {
     );
 
     const newUser = new User({
-      username,
-      email: email.toLowerCase(),
+      username: normalizedUsername,
+      email: normalizedEmail,
       password: hashedPassword,
 
       authProvider: "local",
@@ -97,6 +107,18 @@ const signup = async (req, res) => {
 
   } catch (error) {
     console.error("Signup Error:", error);
+
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0];
+      const message =
+        field === "email"
+          ? "An account with this email already exists"
+          : field === "username"
+            ? "Username already exists"
+            : "An account with these details already exists";
+
+      return res.status(409).json({ message });
+    }
 
     return res.status(500).json({
       message: "Signup Failed",
@@ -176,7 +198,7 @@ const login = async (req, res) => {
 
 const googleAuth = async (req, res) => {
   try {
-    const { accessToken } = req.body;
+    const { accessToken, mode = "signup" } = req.body;
 
     // --------------------------------------
     // Validate request
@@ -185,6 +207,12 @@ const googleAuth = async (req, res) => {
     if (!accessToken) {
       return res.status(400).json({
         message: "Google access token is required",
+      });
+    }
+
+    if (mode !== "login" && mode !== "signup") {
+      return res.status(400).json({
+        message: "Google authentication mode is invalid",
       });
     }
 
@@ -279,6 +307,13 @@ const googleAuth = async (req, res) => {
     let user = await User.findOne({
       email,
     });
+
+    if (!user && mode === "login") {
+      return res.status(404).json({
+        message:
+          "No account found for this Google account. Please sign up first.",
+      });
+    }
 
     // --------------------------------------
     // EXISTING USER

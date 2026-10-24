@@ -43,7 +43,7 @@ const userSchema = new mongoose.Schema(
     // Google account ID
     googleId: {
       type: String,
-      default: null,
+      default: undefined,
       sparse: true,
     },
 
